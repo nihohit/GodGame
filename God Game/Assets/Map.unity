@@ -285,7 +285,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1403891672}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: -0, z: -191.1}
+  m_LocalPosition: {x: -0, y: -0, z: -300}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 334738669}
@@ -330,8 +330,8 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
-  orthographic: 1
+  field of view: 30
+  orthographic: 0
   orthographic size: 50
   m_Depth: -1
   m_CullingMask:
@@ -359,7 +359,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62c60a58f1770054c812ce60011b5990, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_DampTime: 0.2
-  m_ScreenEdgeBuffer: 4
-  m_MinSize: 6.5
-  m_Targets: []
+  dampTime: 0.2
+  minZoom: 20
+  maxZoom: 100
+  zoomcChangePerFrame: 15
+  moveSpeed: 50
+  rotationSpeed: 50
+  pitchSpeed: 50

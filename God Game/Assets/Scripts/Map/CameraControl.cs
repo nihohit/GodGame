@@ -3,15 +3,15 @@
 public class CameraControl : MonoBehaviour {
     // Zooming
     public float dampTime = 0.2f;                 // Approximate time for the camera to refocus.
-    public float minZoom = 20f; // The smallest orthographic size the camera can be.
-    public float maxZoom = 90f;
+    public float minZoom = 15f; // The smallest orthographic size the camera can be.
+    public float maxZoom = 40f;
     public float zoomcChangePerFrame = 25f;
     
     // Moving
     public float moveSpeed = 20f;
 
     // Rotating
-    public float rotationSpeed = 10f;
+    public float rotationSpeed = 30f;
 
     // Pitch
     public float pitchSpeed = 10f;
@@ -23,6 +23,7 @@ public class CameraControl : MonoBehaviour {
 
 
     private void Awake() {
+
         cameraObject = GetComponentInChildren<Camera>();
     }
 
@@ -35,6 +36,8 @@ public class CameraControl : MonoBehaviour {
         zoom();
 
         rotate();
+
+        rotateAroundcenter();
 
         pitch();
     }
@@ -67,13 +70,30 @@ public class CameraControl : MonoBehaviour {
         float zoomChange = Input.mouseScrollDelta.y;
         
         // Find the required size based on the desired position and smoothly transition to that size.
-        float requiredSize = cameraObject.orthographicSize - zoomChange * zoomcChangePerFrame;
-        cameraObject.orthographicSize = Mathf.SmoothDamp(cameraObject.orthographicSize, requiredSize, ref zoomSpeed, dampTime);
-        cameraObject.orthographicSize = Mathf.Clamp(cameraObject.orthographicSize, minZoom, maxZoom);
+        float requiredSize = cameraObject.fieldOfView - zoomChange * zoomcChangePerFrame;
+        cameraObject.fieldOfView = Mathf.SmoothDamp(cameraObject.fieldOfView, requiredSize, ref zoomSpeed, dampTime);
+        cameraObject.fieldOfView = Mathf.Clamp(cameraObject.fieldOfView, minZoom, maxZoom);
     }
 
     void rotate() {
+        float yawChange = 0;
+        if (Input.GetMouseButton(2)) {
+            yawChange += Input.GetAxis("Mouse X") * rotationSpeed * Time.deltaTime;
+        }
 
+        transform.Rotate(Vector3.up * yawChange);
+    }
+
+    void rotateAroundcenter() {
+        Vector3 rotationDirection = Vector3.zero;
+        if (Input.GetKey(KeyCode.Q)) {
+            rotationDirection += Vector3.left;
+        }
+        if (Input.GetKey(KeyCode.E)) {
+            rotationDirection += Vector3.right;
+        }
+        transform.LookAt(transform.parent);
+        transform.Translate(rotationDirection * Time.deltaTime * rotationSpeed);
     }
 
     void pitch() {
@@ -81,7 +101,7 @@ public class CameraControl : MonoBehaviour {
             return;
         }
 
-        float pitchChange = Input.GetAxis("Mouse Y") * pitchSpeed;
-        transform.parent.Rotate(Vector3.left * pitchChange * Time.deltaTime);
+        float pitchChange = Input.GetAxis("Mouse Y") * pitchSpeed * Time.deltaTime;
+        transform.position += Vector3.up * pitchChange;
     }
 }
