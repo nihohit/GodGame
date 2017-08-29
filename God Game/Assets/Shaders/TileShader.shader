@@ -29,6 +29,7 @@
 			{
 				float4 vertex : SV_POSITION;
 				float4 color : COLOR;
+				float4 internal : COLOR1;
 			};
 			
 			v2f vert (appdata v)
@@ -36,13 +37,17 @@
 				v2f o;
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.color = _Color;
-				if (v.texcoord.x == 1 || v.texcoord.y == 1 || v.texcoord.x == 0 || v.texcoord.y == 0) {
-					o.color = float4(0, 0, 0, 1);
-				}
+				o.internal = float4(1, 1, 1, 1);
+				if (v.texcoord.x == 1 || v.texcoord.y == 1 || v.texcoord.x == 0 || v.texcoord.y == 0) { 
+					 o.internal = float4(0, 0, 0, 0); 
+				} 
 				return o;
 			}
 			
-			fixed4 frag (v2f i) : SV_Target { return i.color; }
+			fixed4 frag (v2f i) : SV_Target {
+				float internal = step(1 - i.internal.r, 0.9);
+				return i.color * internal;
+			}
 			ENDCG
 		}
 	}
