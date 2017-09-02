@@ -362,7 +362,7 @@ MonoBehaviour:
   dampTime: 0.2
   minZoom: 20
   maxZoom: 100
-  zoomcChangePerFrame: 15
-  moveSpeed: 50
-  rotationSpeed: 50
-  pitchSpeed: 50
+  zoomcChangePerFrame: 50
+  moveSpeed: 100
+  rotationSpeed: 100
+  pitchSpeed: 100

@@ -62,6 +62,8 @@ public class CameraControl : MonoBehaviour {
             movementDirection += Vector3.right;
         }
         movementDirection = movementDirection * moveSpeed * Time.deltaTime;
+        var rotation = transform.eulerAngles - transform.parent.eulerAngles;
+        movementDirection = Quaternion.Euler(0, rotation.y, 0) * movementDirection;
         transform.parent.position += movementDirection;
     }
 
