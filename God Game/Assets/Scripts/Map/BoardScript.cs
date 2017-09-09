@@ -1,13 +1,24 @@
 ﻿﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class BoardScript : MonoBehaviour {
+    private enum TileUpdateType {
+        Raise,
+        Lower,
+        Flatten
+    }
+
+    public int heightChangeRate = 20;
 
     public int x, z;
 
     private TileScript[,] tileScripts;
     private GameObject[,] tiles;
+
+    private TileScript tileToUpdate;
+    private TileUpdateType updateType;
 
     // Use this for initialization
     void Start() {
@@ -22,6 +33,7 @@ public class BoardScript : MonoBehaviour {
             for (int j = -z; j < z; j++) {
                 tiles[i + x, j + z] = instantiateObject(prefab, Vector3.Scale(prefab.GetComponent<Renderer>().bounds.size, new Vector3(i, 0, j)));
                 tileScripts[i + x, j + z] = tiles[i + x, j + z].GetComponent<TileScript>();
+                tileScripts[i + x, j + z].board = this;
                 tiles[i + x, j + z].name = string.Format("Tile {0}, {1}", i + x, j + z);
                 tiles[i + x, j + z].transform.parent = transform;
             }
@@ -77,6 +89,25 @@ public class BoardScript : MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
+        if (tileToUpdate != null) {
+            float change = heightChangeRate * Time.deltaTime;
+            change = updateType == TileUpdateType.Lower ? -change : change;
+            BoardScript.adjustVertices(tileToUpdate, change);
+            tileToUpdate = null;
+        }
+    }
 
+    public void tileWasPressed(TileScript tile, int mouseButtonCode) {
+        tileToUpdate = tile;
+        updateType = mouseButtonCode == 1 ? TileUpdateType.Lower : TileUpdateType.Raise;
+    }
+
+    public static void adjustVertices(TileScript tile, float changedHeight) {
+        var vertices = TileScript.changeVerticesHeight(tile.vertices, changedHeight).ToList();
+        foreach(var neighbour in tile.neighbours) {
+            var offset = tile.transform.position - neighbour.transform.position;
+            var offsetedVertices = vertices.Select(vertex => vertex + offset).ToList();
+            neighbour.vertices = TileScript.adjustedVertices(neighbour.vertices, offsetedVertices);
+        }
     }
 }

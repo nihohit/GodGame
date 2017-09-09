@@ -1,196 +1,115 @@
-﻿// using UnityEngine;
-// using UnityEditor;
-// using UnityEngine.TestTools;
-// using NUnit.Framework;
-// using System.Collections.Generic;
+﻿using UnityEngine;
+using UnityEditor;
+using UnityEngine.TestTools;
+using NUnit.Framework;
+using System.Collections;
+using System.Collections.Generic;
 
-// public class TileScriptTests {
+public class TileScriptTests {
 
-// 	[Test]
-// 	public void adjustCornersTest() {
-// 		var gameObject = new GameObject();
-// 		var tile = gameObject.AddComponent<TileScript>();
+    [Test]
+    public void changeVerticesHeight() {
+        var vertices = new List<Vector3>{
+            new Vector3(-5, 1, -5),
+            new Vector3(5, 2, -5),
+            new Vector3(0, 3, 0),
+            new Vector3(-5, 4, 5),
+            new Vector3(5, 5, 5)
+        };
+        var heightChange = 5;
 
-// 		var corners = new List<Vector3>{
-// 			new Vector3(-5, 1, -5), 
-// 			new Vector3(5, 2, -5), 
-// 			new Vector3(-5, 3, 5), 
-// 			new Vector3(5, 4, 5)
-// 		};
-// 		var heightChange = 5;
+        var expectedVertices = new List<Vector3>{
+            new Vector3(-5, 6, -5),
+            new Vector3(5, 7, -5),
+            new Vector3(0, 8, 0),
+            new Vector3(-5, 9, 5),
+            new Vector3(5, 10, 5)
+        };
 
-// 		var offset = new Vector3(10, 0, 0);
-// 		var newCorners = tile.adjustCorners(heightChange, offset, corners);
-// 		var expectedCorners = new List<Vector3> {
-// 			new Vector3(-5, 1, -5), 
-// 			new Vector3(5, 7, -5), 
-// 			new Vector3(-5, 3, 5), 
-// 			new Vector3(5, 9, 5)
-// 		};
-// 		CollectionAssert.AreEqual(newCorners, expectedCorners);
-		
-// 		offset = new Vector3(0, 0, 10);
-// 		newCorners = tile.adjustCorners(heightChange, offset, corners);
-// 		expectedCorners = new List<Vector3> {
-// 			new Vector3(-5, 1, -5), 
-// 			new Vector3(5, 2, -5), 
-// 			new Vector3(-5, 8, 5), 
-// 			new Vector3(5, 9, 5)
-// 		};
-// 		CollectionAssert.AreEqual(newCorners, expectedCorners);
+        var result = TileScript.changeVerticesHeight(vertices, heightChange);
 
-// 		offset = new Vector3(-10, 0, 0);
-// 		newCorners = tile.adjustCorners(heightChange, offset, corners);
-// 		expectedCorners = new List<Vector3> {
-// 			new Vector3(-5, 6, -5), 
-// 			new Vector3(5, 2, -5), 
-// 			new Vector3(-5, 8, 5), 
-// 			new Vector3(5, 4, 5)
-// 		};
-// 		CollectionAssert.AreEqual(newCorners, expectedCorners);
-		
-// 		offset = new Vector3(0, 0, -10);
-// 		newCorners = tile.adjustCorners(heightChange, offset, corners);
-// 		expectedCorners = new List<Vector3> {
-// 			new Vector3(-5, 6, -5), 
-// 			new Vector3(5, 7, -5), 
-// 			new Vector3(-5, 3, 5), 
-// 			new Vector3(5, 4, 5)
-// 		};
-// 		CollectionAssert.AreEqual(newCorners, expectedCorners);
-// 	}
+        CollectionAssert.AreEqual(expectedVertices, result);
 
-// 	[Test]
-// 	public void adjustIndirectCornersTest() {
-// 		var gameObject = new GameObject();
-// 		var tile = gameObject.AddComponent<TileScript>();
+        heightChange = -5;
 
-// 		var corners = new List<Vector3>{
-// 			new Vector3(-5, 1, -5), 
-// 			new Vector3(5, 2, -5), 
-// 			new Vector3(-5, 3, 5), 
-// 			new Vector3(5, 4, 5)
-// 		};
-// 		var heightChange = 5;
+        expectedVertices = new List<Vector3>{
+            new Vector3(-5, -4, -5),
+            new Vector3(5, -3, -5),
+            new Vector3(0, -2, 0),
+            new Vector3(-5, -1, 5),
+            new Vector3(5, 0, 5)
+        };
 
-// 		var offset = new Vector3(10, 0, 10);
-// 		var newCorners = tile.adjustCorners(heightChange, offset, corners);
-// 		var expectedCorners = new List<Vector3> {
-// 			new Vector3(-5, 1, -5), 
-// 			new Vector3(5, 2, -5), 
-// 			new Vector3(-5, 3, 5), 
-// 			new Vector3(5, 9, 5)
-// 		};
-// 		CollectionAssert.AreEqual(newCorners, expectedCorners);
-		
-// 		offset = new Vector3(-10, 0, 10);
-// 		newCorners = tile.adjustCorners(heightChange, offset, corners);
-// 		expectedCorners = new List<Vector3> {
-// 			new Vector3(-5, 1, -5), 
-// 			new Vector3(5, 2, -5), 
-// 			new Vector3(-5, 8, 5), 
-// 			new Vector3(5, 4, 5)
-// 		};
-// 		CollectionAssert.AreEqual(newCorners, expectedCorners);
+        result = TileScript.changeVerticesHeight(vertices, heightChange);
 
-// 		offset = new Vector3(-10, 0, -10);
-// 		newCorners = tile.adjustCorners(heightChange, offset, corners);
-// 		expectedCorners = new List<Vector3> {
-// 			new Vector3(-5, 6, -5), 
-// 			new Vector3(5, 2, -5), 
-// 			new Vector3(-5, 3, 5), 
-// 			new Vector3(5, 4, 5)
-// 		};
-// 		CollectionAssert.AreEqual(newCorners, expectedCorners);
-		
-// 		offset = new Vector3(10, 0, -10);
-// 		newCorners = tile.adjustCorners(heightChange, offset, corners);
-// 		expectedCorners = new List<Vector3> {
-// 			new Vector3(-5, 1, -5), 
-// 			new Vector3(5, 7, -5), 
-// 			new Vector3(-5, 3, 5), 
-// 			new Vector3(5, 4, 5)
-// 		};
-// 		CollectionAssert.AreEqual(newCorners, expectedCorners);
-// 	}
+        CollectionAssert.AreEqual(expectedVertices, result);
+    }
 
-// 	[Test]
-// 	public void adjustVertices() {
-// 		var gameObject = new GameObject();
-// 		var tile = gameObject.AddComponent<TileScript>();
+    [Test]
+    public void adjustVertices() {
+        var vertices = new List<Vector3>{
+            new Vector3(-5, 1, -5),
+            new Vector3(5, 2, -5),
+            new Vector3(0, 3, 0),
+            new Vector3(-5, 4, 5),
+            new Vector3(5, 5, 5)
+        };
+        
+        var templateVertices = new List<Vector3>{
+            new Vector3(5, 6, -5),
+            new Vector3(15, 52, -5),
+            new Vector3(10, 53, 0),
+            new Vector3(5, 9, 5),
+            new Vector3(15, 55, 5)
+        };
 
-// 		var vertices = new List<Vector3>{
-// 			new Vector3(-1, 0, -1),
-// 			new Vector3(0, 0, -1), 
-// 			new Vector3(1, 0, -1), 
-// 			new Vector3(-1, 0, 0),
-// 			new Vector3(0, 0, 0), 
-// 			new Vector3(1, 0, 0), 
-// 			new Vector3(-1, 0, 1),
-// 			new Vector3(0, 0, 1), 
-// 			new Vector3(1, 0, 1), 
-// 		}; 
+        var expectedVertices = new List<Vector3>{
+            new Vector3(-5, 1, -5),
+            new Vector3(5, 6, -5),
+            new Vector3(0, 5, 0),
+            new Vector3(-5, 4, 5),
+            new Vector3(5, 9, 5)
+        };
 
-// 		var corners = new List<Vector3>{
-// 			new Vector3(-1, 2, -1), 
-// 			new Vector3(1, 2, -1), 
-// 			new Vector3(-1, 0, 1), 
-// 			new Vector3(1, 0, 1)
-// 		};
-// 		var expectedVertices = new List<Vector3>{
-// 			new Vector3(-1, 2, -1),
-// 			new Vector3(0, 2, -1), 
-// 			new Vector3(1, 2, -1), 
-// 			new Vector3(-1, 1, 0),
-// 			new Vector3(0, 1, 0), 
-// 			new Vector3(1, 1, 0), 
-// 			new Vector3(-1, 0, 1),
-// 			new Vector3(0, 0, 1), 
-// 			new Vector3(1, 0, 1), 
-// 		};
+        var result = TileScript.adjustedVertices(vertices, templateVertices);
+        CollectionAssert.AreEqual(expectedVertices, result);
 
-// 		var result = tile.adjustVertices(vertices, corners);
+        templateVertices = new List<Vector3>{
+            new Vector3(-5, 3, 5),
+            new Vector3(5, 4, 5),
+            new Vector3(0, 53, 10),
+            new Vector3(-5, 54, 15),
+            new Vector3(5, 55, 15)
+        };
 
-// 		CollectionAssert.AreEqual(result, expectedVertices); 
-// 	}
+        expectedVertices = new List<Vector3>{
+            new Vector3(-5, 1, -5),
+            new Vector3(5, 2, -5),
+            new Vector3(0, 2.5f, 0),
+            new Vector3(-5, 3, 5),
+            new Vector3(5, 4, 5)
+        };
 
-// 		[Test]
-// 	public void adjustVerticesSingleCorner() {
-// 		var gameObject = new GameObject();
-// 		var tile = gameObject.AddComponent<TileScript>();
+        result = TileScript.adjustedVertices(vertices, templateVertices);
+        CollectionAssert.AreEqual(expectedVertices, result);
 
-// 		var vertices = new List<Vector3>{
-// 			new Vector3(-1, 0, -1),
-// 			new Vector3(0, 0, -1), 
-// 			new Vector3(1, 0, -1), 
-// 			new Vector3(-1, 0, 0),
-// 			new Vector3(0, 0, 0), 
-// 			new Vector3(1, 0, 0), 
-// 			new Vector3(-1, 0, 1),
-// 			new Vector3(0, 0, 1), 
-// 			new Vector3(1, 0, 1), 
-// 		}; 
+        templateVertices = new List<Vector3>{
+            new Vector3(-15, 51, -15),
+            new Vector3(-5, 52, -15),
+            new Vector3(-10, 53, -10),
+            new Vector3(-15, 54, -5),
+            new Vector3(-5, 13, -5)
+        };
 
-// 		var corners = new List<Vector3>{
-// 			new Vector3(-1, 4, -1), 
-// 			new Vector3(1, 0, -1), 
-// 			new Vector3(-1, 0, 1), 
-// 			new Vector3(1, 0, 1)
-// 		};
-// 		var expectedVertices = new List<Vector3>{
-// 			new Vector3(-1, 4, -1),
-// 			new Vector3(0, 2, -1), 
-// 			new Vector3(1, 2, -1), 
-// 			new Vector3(-1, 1, 0),
-// 			new Vector3(0, 1, 0), 
-// 			new Vector3(1, 0, 0), 
-// 			new Vector3(-1, 0, 1),
-// 			new Vector3(0, 0, 1), 
-// 			new Vector3(1, 0, 1), 
-// 		};
+        expectedVertices = new List<Vector3>{
+            new Vector3(-5, 13, -5),
+            new Vector3(5, 2, -5),
+            new Vector3(0, 6, 0),
+            new Vector3(-5, 4, 5),
+            new Vector3(5, 5, 5)
+        };
 
-// 		var result = tile.adjustVertices(vertices, corners);
-
-// 		CollectionAssert.AreEqual(result, expectedVertices); 
-// 	}
-// }
+        result = TileScript.adjustedVertices(vertices, templateVertices);
+        CollectionAssert.AreEqual(expectedVertices, result);
+    }
+}

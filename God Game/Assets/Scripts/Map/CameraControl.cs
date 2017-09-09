@@ -18,9 +18,6 @@ public class CameraControl : MonoBehaviour {
 
     private Camera cameraObject;                        // Used for referencing the camera.
     private float zoomSpeed;                      // Reference speed for the smooth damping of the orthographic size.
-    private Vector3 moveVelocity;                 // Reference velocity for the smooth damping of the position.
-    private Vector3 desiredPosition;              // The position the camera is moving towards.
-
 
     private void Awake() {
 
