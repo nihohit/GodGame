@@ -213,6 +213,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7ac6bacc05e6b34db33fdd3a42dca6d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  heightChangeRate: 20
   x: 10
   z: 10
 --- !u!4 &50105160
@@ -240,7 +241,7 @@ GameObject:
   - component: {fileID: 330118463}
   - component: {fileID: 330118462}
   m_Layer: 5
-  m_Name: Canvas
+  m_Name: MiniProfiler canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
