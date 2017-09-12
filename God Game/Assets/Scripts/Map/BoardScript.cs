@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
+public enum TileUpdateType {
+    LowerRaise,
+    Flatten
+}
+
 public class BoardScript : MonoBehaviour {
-    private enum TileUpdateType {
-        Raise,
-        Lower,
-        Flatten
-    }
+    private bool moveUp;
 
     public int heightChangeRate = 20;
-
     public int x, z;
 
     private TileScript[,] tileScripts;
@@ -25,7 +25,7 @@ public class BoardScript : MonoBehaviour {
         initializeTiles();
     }
 
-    void initializeTiles() {
+    private void initializeTiles() {
         GameObject prefab = (GameObject)Resources.Load("Prefabs/Tile");
         tiles = new GameObject[x * 2, z * 2];
         tileScripts = new TileScript[x * 2, z * 2];
@@ -42,7 +42,7 @@ public class BoardScript : MonoBehaviour {
         setupNeighbours();
     }
 
-    void setupNeighbours() {
+    private void setupNeighbours() {
         for (int i = 0; i < x * 2; i++) {
             for (int j = 0; j < z * 2; j++) {
                 List<TileScript> directNeighbours = new List<TileScript>();
@@ -83,7 +83,7 @@ public class BoardScript : MonoBehaviour {
         }
     }
 
-    GameObject instantiateObject(Object prefab, Vector3 position) {
+    private GameObject instantiateObject(Object prefab, Vector3 position) {
         return (GameObject)Instantiate(prefab, position, Quaternion.identity);
     }
 
@@ -91,23 +91,36 @@ public class BoardScript : MonoBehaviour {
     void Update() {
         if (tileToUpdate != null) {
             float change = heightChangeRate * Time.deltaTime;
-            change = updateType == TileUpdateType.Lower ? -change : change;
-            BoardScript.adjustVertices(tileToUpdate, change);
+            BoardScript.adjustVertices(tileToUpdate, change, updateType, moveUp);
             tileToUpdate = null;
         }
     }
 
     public void tileWasPressed(TileScript tile, int mouseButtonCode) {
         tileToUpdate = tile;
-        updateType = mouseButtonCode == 1 ? TileUpdateType.Lower : TileUpdateType.Raise;
+        moveUp = mouseButtonCode == 0;
     }
 
-    public static void adjustVertices(TileScript tile, float changedHeight) {
-        var vertices = TileScript.changeVerticesHeight(tile.vertices, changedHeight).ToList();
-        foreach(var neighbour in tile.neighbours) {
+    public static void adjustVertices(TileScript tile, float changeRate, TileUpdateType type, bool moveUp) {
+        var newVertices = type == TileUpdateType.LowerRaise ? raisedVertices(tile, changeRate, moveUp) :
+            flattenVertices(tile, changeRate, moveUp);
+        foreach (var neighbour in tile.neighbours) {
             var offset = tile.transform.position - neighbour.transform.position;
-            var offsetedVertices = vertices.Select(vertex => vertex + offset).ToList();
+            var offsetedVertices = newVertices.Select(vertex => vertex + offset).ToList();
             neighbour.vertices = TileScript.adjustedVertices(neighbour.vertices, offsetedVertices);
         }
+    }
+
+    private static List<Vector3> raisedVertices(TileScript tile, float changeRate, bool moveUp) {
+        var change = moveUp ? changeRate : -changeRate;
+        return TileScript.changeAllVerticesHeight(tile.vertices, change).ToList();
+    }
+
+    private static List<Vector3> flattenVertices(TileScript tile, float changeRate, bool moveUp) {
+        return TileScript.flattenVertices(tile.vertices, changeRate, moveUp).ToList();
+    }
+
+    public void setActionType(string type) {
+        updateType = (TileUpdateType)System.Enum.Parse(typeof(TileUpdateType), type);
     }
 }

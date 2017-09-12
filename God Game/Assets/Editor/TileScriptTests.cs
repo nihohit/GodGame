@@ -8,7 +8,7 @@ using System.Collections.Generic;
 public class TileScriptTests {
 
     [Test]
-    public void changeVerticesHeight() {
+    public void changeAllVerticesHeight() {
         var vertices = new List<Vector3>{
             new Vector3(-5, 1, -5),
             new Vector3(5, 2, -5),
@@ -26,7 +26,7 @@ public class TileScriptTests {
             new Vector3(5, 10, 5)
         };
 
-        var result = TileScript.changeVerticesHeight(vertices, heightChange);
+        var result = TileScript.changeAllVerticesHeight(vertices, heightChange);
 
         CollectionAssert.AreEqual(expectedVertices, result);
 
@@ -40,7 +40,78 @@ public class TileScriptTests {
             new Vector3(5, 0, 5)
         };
 
-        result = TileScript.changeVerticesHeight(vertices, heightChange);
+        result = TileScript.changeAllVerticesHeight(vertices, heightChange);
+
+        CollectionAssert.AreEqual(expectedVertices, result);
+    }
+
+    [Test]
+    public void flattenVerticesUp() {
+        var vertices = new List<Vector3>{
+            new Vector3(-5, 1, -5),
+            new Vector3(5, 2, -5),
+            new Vector3(0, 3, 0),
+            new Vector3(-5, 4, 5),
+            new Vector3(5, 5, 5)
+        };
+        var heightChange = 2f;
+
+        var expectedVertices = new List<Vector3>{
+            new Vector3(-5, 3, -5),
+            new Vector3(5, 3.5f, -5),
+            new Vector3(0, 4, 0),
+            new Vector3(-5, 4.5f, 5),
+            new Vector3(5, 5, 5)
+        };
+
+        var result = TileScript.flattenVertices(vertices, heightChange, true);
+        CollectionAssert.AreEqual(expectedVertices, result);
+    }
+
+    [Test]
+    public void flattenVerticesDown() {
+        var vertices = new List<Vector3>{
+            new Vector3(-5, 1, -5),
+            new Vector3(5, 2, -5),
+            new Vector3(0, 3, 0),
+            new Vector3(-5, 4, 5),
+            new Vector3(5, 5, 5)
+        };
+        var heightChange = 2f;
+
+        var expectedVertices = new List<Vector3>{
+            new Vector3(-5, 1, -5),
+            new Vector3(5, 1.5f, -5),
+            new Vector3(0, 2, 0),
+            new Vector3(-5, 2.5f, 5),
+            new Vector3(5, 3, 5)
+        };
+
+        var result = TileScript.flattenVertices(vertices, heightChange, false);
+
+        CollectionAssert.AreEqual(expectedVertices, result);
+    }
+
+    [Test]
+    public void flattenVerticesLowPrecision() {
+        var vertices = new List<Vector3>{
+            new Vector3(-5, 2, -5),
+            new Vector3(5, 1.95f, -5),
+            new Vector3(0, 1.97f, 0),
+            new Vector3(-5, 1.98f, 5),
+            new Vector3(5, 1.99f, 5)
+        };
+        var heightChange = 0.1f;
+
+        var expectedVertices = new List<Vector3>{
+            new Vector3(-5, 2, -5),
+            new Vector3(5, 2, -5),
+            new Vector3(0, 2, 0),
+            new Vector3(-5, 2, 5),
+            new Vector3(5, 2, 5)
+        };
+
+        var result = TileScript.flattenVertices(vertices, heightChange, true);
 
         CollectionAssert.AreEqual(expectedVertices, result);
     }

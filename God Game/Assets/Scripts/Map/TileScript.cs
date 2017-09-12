@@ -70,9 +70,24 @@ public class TileScript : MonoBehaviour {
         }
     }
 
-    static public IEnumerable<Vector3> changeVerticesHeight(List<Vector3> vertices, float heightChange) {
+    static public IEnumerable<Vector3> changeAllVerticesHeight(List<Vector3> vertices, 
+        float heightChange) {
         Assert.AreEqual(vertices.Count, kExpectedNumberOfVertices);
         return vertices.Select(vertex => vertex + new Vector3(0, heightChange, 0));
+    }
+
+    static public IEnumerable<Vector3> flattenVertices(List<Vector3> vertices,
+        float heightChange, bool moveUp) {
+        Assert.AreEqual(vertices.Count, kExpectedNumberOfVertices);
+        float min = vertices.Min(vertex => vertex.y);
+        float max = vertices.Max(vertex => vertex.y);
+        float difference = max - min;
+        float goal = moveUp ? max : min;
+        return vertices.Select(vertex => {
+            var result = vertex.y + ((goal - vertex.y) * heightChange) / difference;
+            result = Mathf.Clamp(result, min, max);
+            return new Vector3(vertex.x, result, vertex.z);
+        });
     }
 
     static private List<Vector3> getCorners(List<Vector3> vertices) {
