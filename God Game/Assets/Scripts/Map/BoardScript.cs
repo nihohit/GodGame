@@ -13,6 +13,7 @@ public class BoardScript : MonoBehaviour {
 
     public int heightChangeRate = 20;
     public int x, z;
+    public bool flatten, changeHeight;
 
     private TileScript[,] tileScripts;
     private GameObject[,] tiles;
@@ -120,7 +121,17 @@ public class BoardScript : MonoBehaviour {
         return TileScript.flattenVertices(tile.vertices, changeRate, moveUp).ToList();
     }
 
-    public void setActionType(string type) {
-        updateType = (TileUpdateType)System.Enum.Parse(typeof(TileUpdateType), type);
+    public void setFlatten(bool active) {
+        if (!active) {
+            return;
+        }
+        updateType = TileUpdateType.Flatten;
+    }
+
+    public void setChangeHeight(bool active) {
+        if (!active) {
+            return;
+        }
+        updateType = TileUpdateType.LowerRaise;
     }
 }
