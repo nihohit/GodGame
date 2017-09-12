@@ -117,6 +117,22 @@ public class TileScriptTests {
     }
 
     [Test]
+    public void flattenVerticesNoChange() {
+        var vertices = new List<Vector3>{
+            new Vector3(-5, 0, -5),
+            new Vector3(5, 0, -5),
+            new Vector3(0, 0, 0),
+            new Vector3(-5, 0, 5),
+            new Vector3(5, 0, 5)
+        };
+        var heightChange = 0.1f;
+
+        var result = TileScript.flattenVertices(vertices, heightChange, true);
+
+        CollectionAssert.AreEqual(vertices, result);
+    }
+
+    [Test]
     public void adjustVertices() {
         var vertices = new List<Vector3>{
             new Vector3(-5, 1, -5),

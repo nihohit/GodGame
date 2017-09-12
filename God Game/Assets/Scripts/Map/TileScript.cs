@@ -82,6 +82,9 @@ public class TileScript : MonoBehaviour {
         float min = vertices.Min(vertex => vertex.y);
         float max = vertices.Max(vertex => vertex.y);
         float difference = max - min;
+        if (difference == 0f) {
+            return vertices;
+        }
         float goal = moveUp ? max : min;
         return vertices.Select(vertex => {
             var result = vertex.y + ((goal - vertex.y) * heightChange) / difference;
