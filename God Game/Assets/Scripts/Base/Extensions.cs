@@ -155,13 +155,14 @@ namespace Assets.Scripts.Base
 		// Join two enumerators into a new one
 		public static IEnumerator Join(this IEnumerator enumerator, IEnumerator other)
 		{
-			if (other != null)
-			{
-				return enumerator.ToEnumerable().Union(other.ToEnumerable()).GetEnumerator();
-			}
+            while (enumerator.MoveNext()) {
+                yield return enumerator.Current;
+            }
 
-			return enumerator;
-		}
+            while (other != null && other.MoveNext()) {
+                yield return other.Current;
+            }
+        }
 
 		public static string ToJoinedString<T>(this IEnumerable<T> enumerable, string separator = ", ")
 		{
