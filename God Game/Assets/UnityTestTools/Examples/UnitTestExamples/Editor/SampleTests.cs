@@ -10,21 +10,21 @@ namespace UnityTest
     [Category("Sample Tests")]
     internal class SampleTests
     {
-        [Test]
+        //[Test]
         [Category("Failing Tests")]
         public void ExceptionTest()
         {
             throw new Exception("Exception throwing test");
         }
 
-        [Test]
+        //[Test]
         [Ignore("Ignored test")]
         public void IgnoredTest()
         {
             throw new Exception("Ignored this test");
         }
 
-        [Test]
+        //[Test]
         [MaxTime(100)]
         [Category("Failing Tests")]
         public void SlowTest()
@@ -32,14 +32,14 @@ namespace UnityTest
             Thread.Sleep(200);
         }
 
-        [Test]
+        //[Test]
         [Category("Failing Tests")]
         public void FailingTest()
         {
             Assert.Fail();
         }
 
-        [Test]
+        //[Test]
         [Category("Failing Tests")]
         public void InconclusiveTest()
         {
@@ -64,7 +64,7 @@ namespace UnityTest
             Assert.Pass();
         }
 
-        [Test]
+        //[Test]
         [Culture("pl-PL")]
         public void CultureSpecificTest()
         {
