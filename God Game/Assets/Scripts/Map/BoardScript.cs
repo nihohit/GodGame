@@ -3,13 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-public enum TileUpdateType {
-    LowerRaise,
-    Flatten
-}
-
 public class BoardScript : MonoBehaviour {
-    private bool moveUp;
+    private TileUpdateDirection direction;
 
     public int heightChangeRate = 20;
     public int x, z;
@@ -92,19 +87,19 @@ public class BoardScript : MonoBehaviour {
     void Update() {
         if (tileToUpdate != null) {
             float change = heightChangeRate * Time.deltaTime;
-            BoardScript.adjustVertices(tileToUpdate, change, updateType, moveUp);
+            BoardScript.adjustVertices(tileToUpdate, change, updateType, direction);
             tileToUpdate = null;
         }
     }
 
     public void tileWasPressed(TileScript tile, int mouseButtonCode) {
         tileToUpdate = tile;
-        moveUp = mouseButtonCode == 0;
+        direction = mouseButtonCode == 0 ? TileUpdateDirection.Up : TileUpdateDirection.Down;
     }
 
-    public static void adjustVertices(TileScript tile, float changeRate, TileUpdateType type, bool moveUp) {
-        var newVertices = type == TileUpdateType.LowerRaise ? raisedVertices(tile, changeRate, moveUp) :
-            flattenVertices(tile, changeRate, moveUp);
+    public static void adjustVertices(TileScript tile, float changeRate, TileUpdateType type, TileUpdateDirection direction) {
+        var newVertices = type == TileUpdateType.LowerRaise ? raisedVertices(tile, changeRate, direction) :
+            flattenVertices(tile, changeRate, direction);
         foreach (var neighbour in tile.neighbours) {
             var offset = tile.transform.position - neighbour.transform.position;
             var offsetedVertices = newVertices.Select(vertex => vertex + offset).ToList();
@@ -112,13 +107,13 @@ public class BoardScript : MonoBehaviour {
         }
     }
 
-    private static List<Vector3> raisedVertices(TileScript tile, float changeRate, bool moveUp) {
-        var change = moveUp ? changeRate : -changeRate;
+    private static List<Vector3> raisedVertices(TileScript tile, float changeRate, TileUpdateDirection direction) {
+        var change = direction == TileUpdateDirection.Up ? changeRate : -changeRate;
         return TileScript.changeAllVerticesHeight(tile.vertices, change).ToList();
     }
 
-    private static List<Vector3> flattenVertices(TileScript tile, float changeRate, bool moveUp) {
-        return TileScript.flattenVertices(tile.vertices, changeRate, moveUp).ToList();
+    private static List<Vector3> flattenVertices(TileScript tile, float changeRate, TileUpdateDirection direction) {
+        return TileScript.flattenVertices(tile.vertices, changeRate, direction).ToList();
     }
 
     public void setFlatten(bool active) {

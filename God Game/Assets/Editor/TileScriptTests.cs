@@ -64,7 +64,7 @@ public class TileScriptTests {
             new Vector3(5, 5, 5)
         };
 
-        var result = TileScript.flattenVertices(vertices, heightChange, true);
+        var result = TileScript.flattenVertices(vertices, heightChange, TileUpdateDirection.Up);
         CollectionAssert.AreEqual(expectedVertices, result);
     }
 
@@ -87,7 +87,7 @@ public class TileScriptTests {
             new Vector3(5, 3, 5)
         };
 
-        var result = TileScript.flattenVertices(vertices, heightChange, false);
+        var result = TileScript.flattenVertices(vertices, heightChange, TileUpdateDirection.Down);
 
         CollectionAssert.AreEqual(expectedVertices, result);
     }
@@ -111,7 +111,7 @@ public class TileScriptTests {
             new Vector3(5, 2, 5)
         };
 
-        var result = TileScript.flattenVertices(vertices, heightChange, true);
+        var result = TileScript.flattenVertices(vertices, heightChange, TileUpdateDirection.Up);
 
         CollectionAssert.AreEqual(expectedVertices, result);
     }
@@ -127,7 +127,7 @@ public class TileScriptTests {
         };
         var heightChange = 0.1f;
 
-        var result = TileScript.flattenVertices(vertices, heightChange, true);
+        var result = TileScript.flattenVertices(vertices, heightChange, TileUpdateDirection.Up);
 
         CollectionAssert.AreEqual(vertices, result);
     }

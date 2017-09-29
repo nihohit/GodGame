@@ -25,7 +25,7 @@ public class BoardScriptPlayTests {
         tile1.directNeighbours = new[] { tile2 };
         tile1.indirectNeighbours = new[] { tile3 };
 
-        BoardScript.adjustVertices(tile1, 10, TileUpdateType.LowerRaise, true);
+        BoardScript.adjustVertices(tile1, 10, TileUpdateType.LowerRaise, TileUpdateDirection.Up);
 
         var expectedVertices = new List<Vector3>{
             new Vector3(-5, 10, -5),

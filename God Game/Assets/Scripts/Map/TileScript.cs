@@ -77,7 +77,7 @@ public class TileScript : MonoBehaviour {
     }
 
     static public IEnumerable<Vector3> flattenVertices(List<Vector3> vertices,
-        float heightChange, bool moveUp) {
+        float heightChange, TileUpdateDirection direction) {
         Assert.AreEqual(vertices.Count, kExpectedNumberOfVertices);
         float min = vertices.Min(vertex => vertex.y);
         float max = vertices.Max(vertex => vertex.y);
@@ -85,7 +85,7 @@ public class TileScript : MonoBehaviour {
         if (difference == 0f) {
             return vertices;
         }
-        float goal = moveUp ? max : min;
+        float goal = direction == TileUpdateDirection.Up ? max : min;
         return vertices.Select(vertex => {
             var result = vertex.y + ((goal - vertex.y) * heightChange) / difference;
             result = Mathf.Clamp(result, min, max);
