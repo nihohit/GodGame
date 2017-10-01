@@ -90,6 +90,9 @@ public class BoardScript : MonoBehaviour {
             BoardScript.adjustVertices(tileToUpdate, change, updateType, direction);
             tileToUpdate = null;
         }
+        if (Input.GetKey(KeyCode.Escape)) {
+            Application.Quit();
+        }
     }
 
     public void tileWasPressed(TileScript tile, int mouseButtonCode) {
