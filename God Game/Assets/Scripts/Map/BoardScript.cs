@@ -23,15 +23,21 @@ public class BoardScript : MonoBehaviour {
 
     private void initializeTiles() {
         GameObject prefab = (GameObject)Resources.Load("Prefabs/Tile");
+        GameObject treePrefab = (GameObject)Resources.Load("Prefabs/Trees/RegularTrees/tree001");
         tiles = new GameObject[x * 2, z * 2];
         tileScripts = new TileScript[x * 2, z * 2];
         for (int i = -x; i < x; i++) {
             for (int j = -z; j < z; j++) {
-                tiles[i + x, j + z] = instantiateObject(prefab, Vector3.Scale(prefab.GetComponent<Renderer>().bounds.size, new Vector3(i, 0, j)));
-                tileScripts[i + x, j + z] = tiles[i + x, j + z].GetComponent<TileScript>();
+                var tile = instantiateObject(prefab, Vector3.Scale(prefab.GetComponent<Renderer>().bounds.size, new Vector3(i, 0, j)));
+                tiles[i + x, j + z] = tile;
+                tileScripts[i + x, j + z] = tile.GetComponent<TileScript>();
                 tileScripts[i + x, j + z].board = this;
-                tiles[i + x, j + z].name = string.Format("Tile {0}, {1}", i + x, j + z);
-                tiles[i + x, j + z].transform.parent = transform;
+                tile.name = string.Format("Tile {0}, {1}", i + x, j + z);
+                tile.transform.parent = transform;
+                var tree = instantiateObject(treePrefab, Vector3.zero);
+                tree.GetComponent<Collider>().enabled = false;
+                tree.transform.parent = tile.transform;
+                tree.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
             }
         }
 
