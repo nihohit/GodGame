@@ -112,4 +112,34 @@ public class TileScript : MonoBehaviour {
         adjustedVertices[2] = getCorners(adjustedVertices).Aggregate((sum, corner) => sum + corner) / 4;
         return adjustedVertices;
     }
+
+    public static void pointInformationForTile(TileScript tile, Vector3 point, out Vector3 position, out Vector3 normal) {
+        var topHeight = tile.vertices.Select(vector => vector.y).Max();
+        var minHeight = tile.vertices.Select(vector => vector.y).Min();
+
+        if (Mathf.Approximately(topHeight, minHeight)) {
+            position = new Vector3(point.x, minHeight, point.z);
+            normal = Vector3.up;
+            return;
+        }
+
+        var source = new Vector3(point.x, topHeight, point.z);
+        RaycastHit hit = new RaycastHit();
+        Debug.Assert(Physics.Raycast(source, Vector3.down, out hit, topHeight - minHeight, 1 << 8));
+        position = new Vector3(point.x, hit.point.y, point.z);
+        normal = hit.normal;
+    }
+
+    public static void adjustChildrenLocation(TileScript tile) {
+        foreach (Transform child in tile.transform) {
+            Vector3 position;
+            Vector3 normal;
+            pointInformationForTile(tile, child.position, out position, out normal);
+            child.position = position;
+            child.rotation = Quaternion.FromToRotation(Vector3.up, normal);
+            if (Vector3.Angle(normal, Vector3.up) > 45) {
+                FreeFallingObject.freeObject(child);
+            }
+        }
+    }
 }

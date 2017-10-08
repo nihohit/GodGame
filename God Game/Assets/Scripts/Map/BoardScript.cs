@@ -113,6 +113,7 @@ public class BoardScript : MonoBehaviour {
             var offset = tile.transform.position - neighbour.transform.position;
             var offsetedVertices = newVertices.Select(vertex => vertex + offset).ToList();
             neighbour.vertices = TileScript.adjustedVertices(neighbour.vertices, offsetedVertices);
+            TileScript.adjustChildrenLocation(neighbour);
         }
     }
 
