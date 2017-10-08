@@ -81,10 +81,10 @@ public class TileScript : MonoBehaviour {
         Assert.AreEqual(vertices.Count, kExpectedNumberOfVertices);
         float min = vertices.Min(vertex => vertex.y);
         float max = vertices.Max(vertex => vertex.y);
-        float difference = max - min;
-        if (difference == 0f) {
+        if (Mathf.Approximately(min, max)) {
             return vertices;
         }
+        float difference = max - min;
         float goal = direction == TileUpdateDirection.Up ? max : min;
         return vertices.Select(vertex => {
             var result = vertex.y + ((goal - vertex.y) * heightChange) / difference;
@@ -105,7 +105,7 @@ public class TileScript : MonoBehaviour {
 
     static public List<Vector3> adjustedVertices(List<Vector3> vertices, List<Vector3> templateVertices) {
         var adjustedVertices = vertices.Select(vertex => {
-            Vector3 template = templateVertices.FirstOrDefault(templateVertex => templateVertex.x == vertex.x && templateVertex.z == vertex.z);
+            Vector3 template = templateVertices.FirstOrDefault(templateVertex => Mathf.Approximately(templateVertex.x, vertex.x) && Mathf.Approximately(templateVertex.z, vertex.z));
             return template != default(Vector3) ? template : vertex;
         }).ToList();
 
