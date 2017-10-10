@@ -62,14 +62,6 @@ public class TileScript : MonoBehaviour {
         };
     }
 
-    private void OnMouseOver() {
-        if (Input.GetMouseButton(0)) {
-            board.tileWasPressed(this, 0);
-        } else if (Input.GetMouseButton(1)) {
-            board.tileWasPressed(this, 1);
-        }
-    }
-
     static public IEnumerable<Vector3> changeAllVerticesHeight(List<Vector3> vertices, 
         float heightChange) {
         Assert.AreEqual(vertices.Count, kExpectedNumberOfVertices);

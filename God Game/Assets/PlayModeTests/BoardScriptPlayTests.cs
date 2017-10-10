@@ -143,7 +143,7 @@ public class BoardScriptPlayTests : IPrebuildSetup {
         cleanObjects();
 
         var boardScript = newBoard(1, 1);
-        return testTileHeightChange(boardScript, 1);
+        return testTileHeightChange(boardScript, TileUpdateDirection.Down);
     }
 
     [UnityTest]
@@ -157,10 +157,10 @@ public class BoardScriptPlayTests : IPrebuildSetup {
     [UnityTest]
     public IEnumerator flattenDownTileFullFlow() {
         var boardScript = newBoard(1, 1);
-        return testTileFlattening(boardScript, 1);
+        return testTileFlattening(boardScript, TileUpdateDirection.Down);
     }
 
-    private IEnumerator testTileHeightChange(BoardScript boardScript, int mouseCode, bool clean = true) {
+    private IEnumerator testTileHeightChange(BoardScript boardScript, TileUpdateDirection direction, bool clean = true) {
         yield return null;
 
         var tile1 = GameObject.Find("Tile 0, 0").GetComponent<TileScript>();
@@ -169,7 +169,7 @@ public class BoardScriptPlayTests : IPrebuildSetup {
         var tile4 = GameObject.Find("Tile 1, 1").GetComponent<TileScript>();
 
         boardScript.setChangeHeight(true);
-        boardScript.tileWasPressed(tile1, mouseCode);
+        boardScript.updateTile(tile1, direction);
         boardScript.heightChangeRate = 20;
 
         yield return null;
@@ -226,32 +226,32 @@ public class BoardScriptPlayTests : IPrebuildSetup {
         }
     }
 
-    private IEnumerator testTileFlattening(BoardScript boardScript, int mouseCode) {
+    private IEnumerator testTileFlattening(BoardScript boardScript, TileUpdateDirection direction) {
         IEnumerator raiseTile = testTileHeightChange(boardScript, 0, false);
-        return Assets.Scripts.Base.MyExtensions.Join(raiseTile, testTileFlatteningInternal(boardScript, mouseCode));
+        return Assets.Scripts.Base.MyExtensions.Join(raiseTile, testTileFlatteningInternal(boardScript, direction));
     }
 
-    private IEnumerator testTileFlatteningInternal(BoardScript boardScript, int mouseCode) {
+    private IEnumerator testTileFlatteningInternal(BoardScript boardScript, TileUpdateDirection direction) {
         var tile1 = GameObject.Find("Tile 0, 0").GetComponent<TileScript>();
         var tile2 = GameObject.Find("Tile 1, 0").GetComponent<TileScript>();
         var tile3 = GameObject.Find("Tile 0, 1").GetComponent<TileScript>();
         var tile4 = GameObject.Find("Tile 1, 1").GetComponent<TileScript>();
 
         boardScript.setFlatten(true);
-        boardScript.tileWasPressed(tile2, mouseCode);
+        boardScript.updateTile(tile2, direction);
 
         var vertices = tile2.vertices;
         while (vertices[0].y != vertices[1].y ||
             vertices[1].y != vertices[2].y ||
             vertices[2].y != vertices[3].y ||
             vertices[3].y != vertices[4].y) {
-            boardScript.tileWasPressed(tile2, mouseCode);
+            boardScript.updateTile(tile2, direction);
             yield return null;
             vertices = tile2.vertices;
         }
 
         var expectedHeight = tile1.vertices[0].y;
-        var expectedFlattenedHeight = mouseCode == 0 ? expectedHeight : 0;
+        var expectedFlattenedHeight = direction == TileUpdateDirection.Up ? expectedHeight : 0;
         Assert.NotZero(expectedHeight);
 
         var expectedVertices1 = new List<Vector3>{
@@ -300,6 +300,4 @@ public class BoardScriptPlayTests : IPrebuildSetup {
 
         cleanObjects();
     }
-
-
 }

@@ -4,16 +4,12 @@ using UnityEngine;
 using System.Linq;
 
 public class BoardScript : MonoBehaviour {
-    private TileUpdateDirection direction;
-
     public int heightChangeRate = 20;
     public int x, z;
     public bool flatten, changeHeight;
 
     private TileScript[,] tileScripts;
     private GameObject[,] tiles;
-
-    private TileScript tileToUpdate;
     private TileUpdateType updateType;
 
     // Use this for initialization
@@ -91,19 +87,36 @@ public class BoardScript : MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
-        if (tileToUpdate != null) {
-            float change = heightChangeRate * Time.deltaTime;
-            BoardScript.adjustVertices(tileToUpdate, change, updateType, direction);
-            tileToUpdate = null;
-        }
         if (Input.GetKey(KeyCode.Escape)) {
             Application.Quit();
+            return;
         }
+
+        TileUpdateDirection direction;
+        
+        if (Input.GetMouseButton(0)) {
+            direction = TileUpdateDirection.Up;
+        } else if (Input.GetMouseButton(1)) {
+            direction = TileUpdateDirection.Down;
+        } else {
+            Debug.Log(@"no input");
+            return;
+        }
+
+        RaycastHit hit = new RaycastHit();
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        if (!Physics.Raycast(ray, out hit, float.MaxValue, 1 << 8)) {
+            Debug.Log(@"nothing hit");
+            return;
+        }
+
+        TileScript tileToUpdate = hit.collider.GetComponent<TileScript>();
+        updateTile(tileToUpdate, direction);
     }
 
-    public void tileWasPressed(TileScript tile, int mouseButtonCode) {
-        tileToUpdate = tile;
-        direction = mouseButtonCode == 0 ? TileUpdateDirection.Up : TileUpdateDirection.Down;
+    public void updateTile(TileScript tile, TileUpdateDirection direction) {
+        float change = heightChangeRate * Time.deltaTime;
+        BoardScript.adjustVertices(tile, change, updateType, direction);
     }
 
     public static void adjustVertices(TileScript tile, float changeRate, TileUpdateType type, TileUpdateDirection direction) {
