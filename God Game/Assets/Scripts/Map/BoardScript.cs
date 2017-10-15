@@ -20,6 +20,7 @@ public class BoardScript : MonoBehaviour {
     private void initializeTiles() {
         GameObject prefab = (GameObject)Resources.Load("Prefabs/Tile");
         GameObject treePrefab = (GameObject)Resources.Load("Prefabs/Trees/RegularTrees/tree001");
+        GameObject manPrefab = (GameObject)Resources.Load("Prefabs/man");
         tiles = new GameObject[x * 2, z * 2];
         tileScripts = new TileScript[x * 2, z * 2];
         for (int i = -x; i < x; i++) {
@@ -31,9 +32,11 @@ public class BoardScript : MonoBehaviour {
                 tile.name = string.Format("Tile {0}, {1}", i + x, j + z);
                 tile.transform.parent = transform;
                 var tree = instantiateObject(treePrefab, Vector3.zero);
-                tree.GetComponent<Collider>().enabled = false;
                 tree.transform.parent = tile.transform;
                 tree.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
+                var man = instantiateObject(manPrefab, Vector3.zero);
+                man.transform.parent = tile.transform;
+                man.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
             }
         }
 
@@ -99,14 +102,12 @@ public class BoardScript : MonoBehaviour {
         } else if (Input.GetMouseButton(1)) {
             direction = TileUpdateDirection.Down;
         } else {
-            Debug.Log(@"no input");
             return;
         }
 
         RaycastHit hit = new RaycastHit();
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (!Physics.Raycast(ray, out hit, float.MaxValue, 1 << 8)) {
-            Debug.Log(@"nothing hit");
             return;
         }
 
