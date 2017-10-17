@@ -129,9 +129,6 @@ public class TileScript : MonoBehaviour {
             pointInformationForTile(tile, child.position, out position, out normal);
             child.position = position;
             child.rotation = Quaternion.FromToRotation(Vector3.up, normal);
-            if (Vector3.Angle(normal, Vector3.up) > 45) {
-                FreeFallingObject.freeObject(child);
-            }
         }
     }
 }

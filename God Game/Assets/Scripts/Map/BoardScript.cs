@@ -31,9 +31,12 @@ public class BoardScript : MonoBehaviour {
                 tileScripts[i + x, j + z].board = this;
                 tile.name = string.Format("Tile {0}, {1}", i + x, j + z);
                 tile.transform.parent = transform;
+
                 var tree = instantiateObject(treePrefab, Vector3.zero);
                 tree.transform.parent = tile.transform;
                 tree.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
+                tree.AddComponent<TerrainObjectScript>();
+
                 var man = instantiateObject(manPrefab, Vector3.zero);
                 man.transform.parent = tile.transform;
                 man.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
