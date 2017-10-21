@@ -7,6 +7,7 @@ using UnityEngine;
 
 public class TileScript : MonoBehaviour {
     private const int kExpectedNumberOfVertices = 5;
+    private static RaycastHit raycastHit = new RaycastHit();
 
     public IEnumerable<TileScript> directNeighbours { get; set; }
 
@@ -116,10 +117,12 @@ public class TileScript : MonoBehaviour {
         }
 
         var source = new Vector3(point.x, topHeight, point.z);
-        RaycastHit hit = new RaycastHit();
-        Debug.Assert(Physics.Raycast(source, Vector3.down, out hit, topHeight - minHeight, 1 << 8));
-        position = new Vector3(point.x, hit.point.y, point.z);
-        normal = hit.normal;
+        
+       if (!Physics.Raycast(source, Vector3.down, out raycastHit, topHeight - minHeight, 1 << 8)) {
+            Debug.Log("{0}, {1}".FormatWith(tile.transform.position, point));
+        }
+        position = new Vector3(point.x, raycastHit.point.y, point.z);
+        normal = raycastHit.normal;
     }
 
     public static void adjustChildrenLocation(TileScript tile) {

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using UnityEngine.AI;
+using System.Threading.Tasks;
 
 public class BoardScript : MonoBehaviour {
     public int heightChangeRate = 20;
@@ -11,10 +13,14 @@ public class BoardScript : MonoBehaviour {
     private TileScript[,] tileScripts;
     private GameObject[,] tiles;
     private TileUpdateType updateType;
+    private NavMeshSurface surface;
+    private AsyncOperation buildMeshOperation;
 
     // Use this for initialization
     void Start() {
         initializeTiles();
+        surface = GetComponent<NavMeshSurface>();
+        surface.BuildNavMesh();
     }
 
     private void initializeTiles() {
@@ -44,6 +50,7 @@ public class BoardScript : MonoBehaviour {
         }
 
         setupNeighbours();
+
     }
 
     private void setupNeighbours() {
@@ -99,7 +106,7 @@ public class BoardScript : MonoBehaviour {
         }
 
         TileUpdateDirection direction;
-        
+
         if (Input.GetMouseButton(0)) {
             direction = TileUpdateDirection.Up;
         } else if (Input.GetMouseButton(1)) {
@@ -116,6 +123,14 @@ public class BoardScript : MonoBehaviour {
 
         TileScript tileToUpdate = hit.collider.GetComponent<TileScript>();
         updateTile(tileToUpdate, direction);
+        if (buildMeshOperation == null || buildMeshOperation.isDone) {
+            buildMeshOperation = surface.UpdateNavMesh(surface.navMeshData);
+            StartCoroutine(buildMesh());
+        }
+    }
+
+    private IEnumerator buildMesh() {
+        yield return buildMeshOperation;
     }
 
     public void updateTile(TileScript tile, TileUpdateDirection direction) {
