@@ -32,6 +32,7 @@ public class TileScript : MonoBehaviour {
             Assert.AreEqual(vertices.Count, kExpectedNumberOfVertices);
             var mesh = transform.GetComponent<MeshFilter>().mesh;
             mesh.SetVertices(value);
+            mesh.RecalculateNormals();
             GetComponent<MeshCollider>().sharedMesh = mesh;
         }
     }
@@ -60,6 +61,13 @@ public class TileScript : MonoBehaviour {
             3, 2, 0,
             1, 2, 4,
             2, 3, 4
+        };
+        mesh.normals = new Vector3[] {
+            Vector3.up,
+            Vector3.up,
+            Vector3.up,
+            Vector3.up,
+            Vector3.up
         };
     }
 

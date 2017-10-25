@@ -42,6 +42,10 @@ public class BoardScript : MonoBehaviour {
                 tree.transform.parent = tile.transform;
                 tree.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
                 tree.AddComponent<TerrainObjectScript>();
+                var obstacle = tree.AddComponent<NavMeshObstacle>();
+                obstacle.shape = NavMeshObstacleShape.Capsule;
+                obstacle.carving = true;
+                obstacle.carveOnlyStationary = false;
 
                 var man = instantiateObject(manPrefab, Vector3.zero);
                 man.transform.parent = tile.transform;
