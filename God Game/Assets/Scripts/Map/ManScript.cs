@@ -19,7 +19,14 @@ public class ManScript : MonoBehaviour {
 	void Update () {
         if (agent.pathPending || agent.remainingDistance > 0.1f)
             return;
+        var randomCircle = Random.insideUnitCircle;
+        agent.destination = new Vector3(randomCircle.x * 200f, 0, randomCircle.y * 200f);
+    }
 
-        agent.destination = 25f * Random.insideUnitCircle;
+    private void OnCollisionEnter(Collision collision) {
+        TileScript tile = collision.gameObject.GetComponent<TileScript>();
+        if (tile) {
+            transform.parent = tile.transform;
+        }
     }
 }
