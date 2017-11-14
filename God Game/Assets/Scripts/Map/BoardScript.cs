@@ -15,6 +15,7 @@ public class BoardScript : MonoBehaviour {
     // Use this for initialization
     void Start() {
         initializeTiles();
+        AstarPath.active.Scan(AstarPath.active.graphs[0]);
     }
 
     private void initializeTiles() {
@@ -120,10 +121,10 @@ public class BoardScript : MonoBehaviour {
 
     public void updateTile(TileScript tile, TileUpdateDirection direction) {
         float change = heightChangeRate * Time.deltaTime;
-        BoardScript.adjustVertices(tile, change, updateType, direction);
+        BoardScript.adjustVertices(tile, change, updateType, direction, AstarPath.active);
     }
 
-    public static void adjustVertices(TileScript tile, float changeRate, TileUpdateType type, TileUpdateDirection direction) {
+    public static void adjustVertices(TileScript tile, float changeRate, TileUpdateType type, TileUpdateDirection direction, AstarPath path) {
         var newVertices = type == TileUpdateType.LowerRaise ? raisedVertices(tile, changeRate, direction) :
             flattenVertices(tile, changeRate, direction);
         foreach (var neighbour in tile.neighbours) {
@@ -131,6 +132,7 @@ public class BoardScript : MonoBehaviour {
             var offsetedVertices = newVertices.Select(vertex => vertex + offset).ToList();
             neighbour.vertices = TileScript.adjustedVertices(neighbour.vertices, offsetedVertices);
             TileScript.adjustChildrenLocation(neighbour);
+            path.UpdateGraphs(new Bounds(tile.transform.position, new Vector3(10, 0, 10)));
         }
     }
 
