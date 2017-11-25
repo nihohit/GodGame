@@ -38,9 +38,11 @@ public class BoardScript : MonoBehaviour {
                 tree.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
                 tree.AddComponent<TerrainObjectScript>();
 
-                var man = instantiateObject(manPrefab, Vector3.zero);
-                man.transform.parent = tile.transform;
-                man.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
+                if (Mathf.Abs((i + j) % 2) == 1) {
+                    var man = instantiateObject(manPrefab, Vector3.zero);
+                    man.transform.parent = tile.transform;
+                    man.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
+                }
             }
         }
 
