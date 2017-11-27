@@ -13,7 +13,7 @@ public class ManScript : MonoBehaviour {
     // The AI's speed in meters per second
     public float speed = 2;
     // The max distance from the AI to a waypoint for it to continue to the next waypoint
-    public float nextWaypointDistance = 3;
+    public float nextWaypointDistance = 0.5f;
     // The waypoint we are currently moving towards
     private int currentWaypoint = 0;
     // How often to recalculate the path (in seconds)
@@ -25,18 +25,11 @@ public class ManScript : MonoBehaviour {
         seeker = GetComponent<Seeker>();
         controller = GetComponent<CharacterController>();
         destination = transform.position;
-	}
+        seekNewPath();
+    }
 	
 	// Update is called once per frame
 	void Update () {
-        if (Vector3.Distance(transform.position, destination) < 0.5) {
-            var randomCircle = Random.insideUnitCircle;
-            destination = new Vector3(randomCircle.x * 200f, 0, randomCircle.y * 200f);
-            seeker.StartPath(transform.position, destination, OnPathComplete);
-            path = null;
-            return;
-        }
-
         if (Time.time - lastRepath > repathRate && seeker.IsDone()) {
             lastRepath = Time.time + Random.value * repathRate * 0.5f;
             // Start a new path to the targetPosition, call the the OnPathComplete function
@@ -47,10 +40,8 @@ public class ManScript : MonoBehaviour {
             // We have no path to follow yet, so don't do anything
             return;
         }
-        if (currentWaypoint > path.vectorPath.Count) return;
         if (currentWaypoint == path.vectorPath.Count) {
-            Debug.Log("End Of Path Reached");
-            currentWaypoint++;
+            seekNewPath();
             return;
         }
         // Direction to the next waypoint
@@ -66,11 +57,23 @@ public class ManScript : MonoBehaviour {
         }
     }
 
+    private void seekNewPath() {
+        var randomCircle = Random.insideUnitCircle;
+        destination = new Vector3(randomCircle.x * 60f, 0, randomCircle.y * 60f) + transform.position;
+        destination.x = Mathf.Clamp(destination.x, -98, 98);
+        destination.z = Mathf.Clamp(destination.z, -98, 98);
+        Debug.Log(destination);
+        seeker.StartPath(transform.position, destination, OnPathComplete);
+        path = null;
+    }
+
     private void OnPathComplete(Path p) {
         if (!p.error) {
             path = p;
             // Reset the waypoint counter so that we start to move towards the first point in the path
             currentWaypoint = 0;
+        } else {
+            //seekNewPath();
         }
     }
 }
