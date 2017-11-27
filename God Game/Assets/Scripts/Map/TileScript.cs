@@ -117,7 +117,7 @@ public class TileScript : MonoBehaviour {
 
         var source = new Vector3(point.x, topHeight, point.z);
         RaycastHit hit = new RaycastHit();
-        Debug.Assert(Physics.Raycast(source, Vector3.down, out hit, topHeight - minHeight, 1 << 8));
+        Physics.Raycast(source, Vector3.down, out hit, topHeight - minHeight, 1 << 8);
         position = new Vector3(point.x, hit.point.y, point.z);
         normal = hit.normal;
     }
