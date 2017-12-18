@@ -160,4 +160,9 @@ public class BoardScript : MonoBehaviour {
         }
         updateType = TileUpdateType.LowerRaise;
     }
+
+    public GameObject TileInPosition(Vector3 position) {
+        return tiles[Mathf.RoundToInt(((int)position.x) / 10f) + x, 
+            Mathf.RoundToInt(((int)position.z) / 10f) + z];
+    }
 }
