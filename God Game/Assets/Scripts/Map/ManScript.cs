@@ -20,12 +20,15 @@ public class ManScript : MonoBehaviour {
     public float repathRate = 1f;
     private float lastRepath = -9999;
 
+    private BoardScript board;
+
     // Use this for initialization
     void Start () {
         seeker = GetComponent<Seeker>();
         controller = GetComponent<CharacterController>();
         destination = transform.position;
         seekNewPath();
+        board = FindObjectOfType<BoardScript>();
     }
 	
 	// Update is called once per frame
@@ -55,6 +58,7 @@ public class ManScript : MonoBehaviour {
         if ((transform.position - path.vectorPath[currentWaypoint]).sqrMagnitude < nextWaypointDistance * nextWaypointDistance) {
             currentWaypoint++;
         }
+        transform.parent = board.TileInPosition(transform.position).transform;
     }
 
     private void seekNewPath() {
@@ -62,7 +66,6 @@ public class ManScript : MonoBehaviour {
         destination = new Vector3(randomCircle.x * 60f, 0, randomCircle.y * 60f) + transform.position;
         destination.x = Mathf.Clamp(destination.x, -98, 98);
         destination.z = Mathf.Clamp(destination.z, -98, 98);
-        Debug.Log(destination);
         seeker.StartPath(transform.position, destination, OnPathComplete);
         path = null;
     }
@@ -72,8 +75,6 @@ public class ManScript : MonoBehaviour {
             path = p;
             // Reset the waypoint counter so that we start to move towards the first point in the path
             currentWaypoint = 0;
-        } else {
-            //seekNewPath();
         }
     }
 }
