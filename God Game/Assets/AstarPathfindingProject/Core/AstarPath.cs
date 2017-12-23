@@ -1044,7 +1044,7 @@ public class AstarPath : VersionedMonoBehaviour {
 			if (logicalCores <= 1) return 0;
 			if (memory <= 512) return 0;
 
-			return 1;
+			return logicalCores;
 		} else {
 			return (int)count > 0 ? 1 : 0;
 		}
@@ -1100,12 +1100,6 @@ public class AstarPath : VersionedMonoBehaviour {
 	/** Initializes the #pathProcessor field */
 	void InitializePathProcessor () {
 		int numThreads = CalculateThreadCount(threadCount);
-
-		// Trying to prevent simple modding to add support for more than one thread
-		if (numThreads > 1) {
-			threadCount = ThreadCount.One;
-			numThreads = 1;
-		}
 
 		int numProcessors = Mathf.Max(numThreads, 1);
 		bool multithreaded = numThreads > 0;
