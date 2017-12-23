@@ -19,6 +19,7 @@ public class BoardScript : MonoBehaviour {
     }
 
     private void initializeTiles() {
+        int manCount = 0;
         GameObject prefab = (GameObject)Resources.Load("Prefabs/Tile");
         GameObject treePrefab = (GameObject)Resources.Load("Prefabs/Trees/RegularTrees/tree001");
         GameObject manPrefab = (GameObject)Resources.Load("Prefabs/man");
@@ -46,6 +47,7 @@ public class BoardScript : MonoBehaviour {
                 }
             }
         }
+        Debug.Log(string.Format("man count: {0}", manCount));
 
         setupNeighbours();
     }
