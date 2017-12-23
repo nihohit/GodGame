@@ -35,18 +35,27 @@ public class BoardScript : MonoBehaviour {
 
                 var tree = instantiateObject(treePrefab, Vector3.zero);
                 tree.transform.parent = tile.transform;
-                tree.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
+                tree.transform.localPosition = randomLocationOnTile();
                 tree.AddComponent<TerrainObjectScript>();
 
-                if (Mathf.Abs((i + j) % 2) == 1) {
+                if (Mathf.Abs((i + j) % 4) == 1) {
+                    manCount++;
                     var man = instantiateObject(manPrefab, Vector3.zero);
                     man.transform.parent = tile.transform;
-                    man.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
+                    man.transform.localPosition = randomLocationOnTile();
                 }
             }
         }
 
         setupNeighbours();
+    }
+
+    private static Vector3 randomLocationOnTile() {
+        var low = -Constants.TileLength / 2;
+        var high = Constants.TileLength / 2;
+        var x = (float)Assets.Scripts.Base.Randomizer.NextDouble(low, high);
+        var z = (float)Assets.Scripts.Base.Randomizer.NextDouble(low, high);
+        return new Vector3(x, 0, z);
     }
 
     private void setupNeighbours() {
@@ -134,7 +143,8 @@ public class BoardScript : MonoBehaviour {
             var offsetedVertices = newVertices.Select(vertex => vertex + offset).ToList();
             neighbour.vertices = TileScript.adjustedVertices(neighbour.vertices, offsetedVertices);
             TileScript.adjustChildrenLocation(neighbour);
-            path.UpdateGraphs(new Bounds(tile.transform.position, new Vector3(10, 0, 10)));
+            path.UpdateGraphs(new Bounds(tile.transform.position, 
+                new Vector3(Constants.TileLength, 0, Constants.TileLength)));
         }
     }
 
@@ -162,7 +172,7 @@ public class BoardScript : MonoBehaviour {
     }
 
     public GameObject TileInPosition(Vector3 position) {
-        return tiles[Mathf.RoundToInt(((int)position.x) / 10f) + x, 
-            Mathf.RoundToInt(((int)position.z) / 10f) + z];
+        return tiles[Mathf.RoundToInt(((int)position.x) / Constants.TileLength) + x, 
+            Mathf.RoundToInt(((int)position.z) / Constants.TileLength) + z];
     }
 }
