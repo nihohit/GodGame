@@ -64,8 +64,8 @@ public class ManScript : MonoBehaviour {
     private void seekNewPath() {
         var randomCircle = Random.insideUnitCircle;
         destination = new Vector3(randomCircle.x * 60f, 0, randomCircle.y * 60f) + transform.position;
-        destination.x = Mathf.Clamp(destination.x, -98, 98);
-        destination.z = Mathf.Clamp(destination.z, -98, 98);
+        destination.x = Mathf.Clamp(destination.x, -198, 198);
+        destination.z = Mathf.Clamp(destination.z, -198, 198);
         seeker.StartPath(transform.position, destination, OnPathComplete);
         path = null;
     }
