@@ -45,6 +45,7 @@ public class BoardScript : MonoBehaviour {
                     var man = instantiateObject(manPrefab, Vector3.zero);
                     man.transform.parent = tile.transform;
                     man.transform.localPosition = randomLocationOnTile();
+                    man.name = string.Format("man:{0}.{1}", i, j);
                 }
             }
         }
@@ -175,7 +176,8 @@ public class BoardScript : MonoBehaviour {
     }
 
     public GameObject TileInPosition(Vector3 position) {
-        return tiles[Mathf.RoundToInt(((int)position.x) / Constants.TileLength) + x, 
-            Mathf.RoundToInt(((int)position.z) / Constants.TileLength) + z];
+        var indexX = Mathf.Clamp(Mathf.FloorToInt(position.x / Constants.TileLength), -x, x) + x;
+        var indexY = Mathf.Clamp(Mathf.FloorToInt(position.z / Constants.TileLength), -z, z) + z;
+        return tiles[indexX, indexY];
     }
 }
