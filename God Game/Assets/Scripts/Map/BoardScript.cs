@@ -38,6 +38,7 @@ public class BoardScript : MonoBehaviour {
                 tree.transform.parent = tile.transform;
                 tree.transform.localPosition = randomLocationOnTile();
                 tree.AddComponent<TerrainObjectScript>();
+                tree.tag = "TerrainObject";
 
                 if (Mathf.Abs((i + j) % 4) == 1) {
                     manCount++;

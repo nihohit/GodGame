@@ -6,6 +6,7 @@ TagManager:
   tags:
   - testingObject
   - Tiles
+  - TerrainObject
   layers:
   - Default
   - TransparentFX
