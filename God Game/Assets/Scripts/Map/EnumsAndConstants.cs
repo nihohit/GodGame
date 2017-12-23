@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 static class Constants {
   public const float MaxHeight = 100;
   public const float MinHeight = -100;
-  public const float SizeOfTile = 10;
+  public const float TileLength = 10;
 }
 
 public enum TileUpdateType {

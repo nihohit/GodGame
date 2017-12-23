@@ -37,15 +37,17 @@ public class TileScript : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+        var low = -Constants.TileLength / 2;
+        var high = Constants.TileLength / 2;
         var mesh = transform.GetComponent<MeshFilter>().mesh;
         GetComponent<MeshCollider>().sharedMesh = mesh;
         mesh.Clear();
         mesh.SetVertices(new List<Vector3> {
-            new Vector3(-5, 0, -5),
-            new Vector3(5, 0, -5),
+            new Vector3(low, 0, low),
+            new Vector3(high, 0, low),
             new Vector3(0, 0, 0),
-            new Vector3(-5, 0, 5),
-            new Vector3(5, 0, 5)
+            new Vector3(low, 0, high),
+            new Vector3(high, 0, high)
         });
         mesh.uv = new Vector2[] {
             new Vector2(0, 0),
