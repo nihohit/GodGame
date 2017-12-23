@@ -32,6 +32,13 @@ public class TileScript : MonoBehaviour {
             var mesh = transform.GetComponent<MeshFilter>().mesh;
             mesh.SetVertices(value);
             GetComponent<MeshCollider>().sharedMesh = mesh;
+            foreach(Transform child in transform) {
+                if (child.tag != "TerrainObject" ||
+                    !TerrainObjectScript.shouldFreeObject(child)) {
+                    return;
+                }
+                TerrainObjectScript.freeObject(child);
+            }
         }
     }
 
