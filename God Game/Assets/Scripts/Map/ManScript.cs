@@ -50,8 +50,8 @@ public class ManScript : MonoBehaviour {
         // Direction to the next waypoint
         Vector3 dir = (path.vectorPath[currentWaypoint] - transform.position).normalized;
         dir *= speed;
-        // Note that SimpleMove takes a velocity in meters/second, so we should not multiply by Time.deltaTime
-        controller.SimpleMove(dir);
+
+        transform.position += dir * Time.deltaTime;
         // The commented line is equivalent to the one below, but the one that is used
         // is slightly faster since it does not have to calculate a square root
         //if (Vector3.Distance (transform.position,path.vectorPath[currentWaypoint]) < nextWaypointDistance) {
