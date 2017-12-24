@@ -15,7 +15,7 @@ public class TerrainObjectScript : MonoBehaviour {
     public static void freeObject(Transform obj) {
         obj.parent = null;
         Rigidbody rigidBody = obj.gameObject.AddComponent<Rigidbody>();
-        rigidBody.mass = 5;
+        rigidBody.mass = 20;
         rigidBody.useGravity = true;
     }
 }
