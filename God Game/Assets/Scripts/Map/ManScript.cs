@@ -58,7 +58,6 @@ public class ManScript : MonoBehaviour {
         if ((transform.position - path.vectorPath[currentWaypoint]).sqrMagnitude < nextWaypointDistance * nextWaypointDistance) {
             currentWaypoint++;
         }
-        transform.parent = board.TileInPosition(transform.position).transform;
     }
 
     private void seekNewPath() {
@@ -76,5 +75,12 @@ public class ManScript : MonoBehaviour {
             // Reset the waypoint counter so that we start to move towards the first point in the path
             currentWaypoint = 0;
         }
+    }
+
+    private void OnTriggerEnter(Collider other) {
+        if (other.tag != "Tiles") {
+            return;
+        }
+        transform.parent = other.transform;
     }
 }
