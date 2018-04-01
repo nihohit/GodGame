@@ -68,10 +68,10 @@ public class CameraControllerScript : MonoBehaviour {
   }
 
   Vector3 ClampPosition(Vector3 position) {
-    float xMax = (board.x - 0.5f) * Constants.SizeOfTile;
+    float xMax = (board.x - 0.5f) * Constants.TileLength;
     position.x = Mathf.Clamp(position.x, -xMax, xMax);
 
-    float zMax = (board.z - 0.5f) * Constants.SizeOfTile;
+    float zMax = (board.z - 0.5f) * Constants.TileLength;
     position.z = Mathf.Clamp(position.z, -zMax, zMax);
 
     return position;
