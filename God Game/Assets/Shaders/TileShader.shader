@@ -1,54 +1,44 @@
-﻿Shader "Unlit/TileShader"
+﻿Shader "Custom/TileShader"
 {
-	Properties
-	{
-		_Color ("Main Color", Color) = (1,1,1,1)
+		Properties {
+		_Color ("Color", Color) = (1,1,1,1)
+		_MainTex ("Albedo (RGB)", 2D) = "white" {}
+		_Glossiness ("Smoothness", Range(0,1)) = 0.5
+		_Metallic ("Metallic", Range(0,1)) = 0.0
+		_TileSize ("TileSize", Float) = 1
 	}
-	SubShader
-	{
+	SubShader {
 		Tags { "RenderType"="Opaque" }
-		LOD 100
-
-		Pass
-		{
-			CGPROGRAM
-			#pragma vertex vert
-			#pragma fragment frag
-			
-			#include "UnityCG.cginc"
+		LOD 200
 		
-			fixed4 _Color;
+		CGPROGRAM
+		#pragma surface surf Standard fullforwardshadows vertex:vert
+		#pragma target 3.0
 
-			struct appdata
-			{
-				float4 vertex : POSITION;
-				float2 texcoord : TEXCOORD0;
-			};
+		sampler2D _MainTex;
 
-			struct v2f
-			{
-				float4 vertex : SV_POSITION;
-				float4 color : COLOR;
-				float4 internal : COLOR1;
-			};
-			
-			v2f vert (appdata v)
-			{
-				v2f o;
-				o.vertex = UnityObjectToClipPos(v.vertex);
-				o.color = _Color;
-				o.internal = float4(1, 1, 1, 1);
-				if (v.texcoord.x == 1 || v.texcoord.y == 1 || v.texcoord.x == 0 || v.texcoord.y == 0) { 
-					 o.internal = float4(0, 0, 0, 0); 
-				} 
-				return o;
-			}
-			
-			fixed4 frag (v2f i) : SV_Target {
-				float internal = step(1 - i.internal.r, 0.9);
-				return i.color * internal;
-			}
-			ENDCG
+		struct Input {
+			float2 cubeUV;
+		};
+
+		half _Glossiness;
+		half _Metallic;
+		half _TileSize;
+		fixed4 _Color;
+
+    void vert (inout appdata_full v, out Input o) {
+			UNITY_INITIALIZE_OUTPUT(Input, o);
+			o.cubeUV = v.vertex.xz;
 		}
-	}
+
+		void surf (Input IN, inout SurfaceOutputStandard o) {
+			fixed4 c = tex2D(_MainTex, IN.cubeUV / _TileSize) * _Color;
+			o.Albedo = c.rgb;
+			o.Metallic = _Metallic;
+			o.Smoothness = _Glossiness;
+			o.Alpha = c.a;
+		}
+		ENDCG
+	} 
+	FallBack "Diffuse"
 }

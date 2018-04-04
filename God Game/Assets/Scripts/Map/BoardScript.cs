@@ -1,159 +1,144 @@
-﻿﻿using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
+[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
 public class BoardScript : MonoBehaviour {
-    public int heightChangeRate = 20;
-    public int x, z;
-    public bool flatten, changeHeight;
+  public int heightChangeRate = 20;
+  public int x, z;
+  public bool flatten, changeHeight;
 
-    private TileScript[,] tileScripts;
-    private GameObject[,] tiles;
-    private TileUpdateType updateType;
+  private TileUpdateType updateType;
+  private MeshFilter filter;
+  private MeshCollider meshCollider;
 
-    // Use this for initialization
-    void Start() {
-        initializeTiles();
-    }
+  private void Awake() {
+    filter = GetComponent<MeshFilter>();
+    GetComponent<MeshRenderer>().material.SetFloat("_TileSize", Constants.SizeOfTile);
+    meshCollider = GetComponent<MeshCollider>();
+  }
 
-    private void initializeTiles() {
-        GameObject prefab = (GameObject)Resources.Load("Prefabs/Tile");
-        GameObject treePrefab = (GameObject)Resources.Load("Prefabs/Trees/RegularTrees/tree001");
-        GameObject manPrefab = (GameObject)Resources.Load("Prefabs/man");
-        tiles = new GameObject[x * 2, z * 2];
-        tileScripts = new TileScript[x * 2, z * 2];
-        for (int i = -x; i < x; i++) {
-            for (int j = -z; j < z; j++) {
-                var tile = instantiateObject(prefab, Vector3.Scale(prefab.GetComponent<Renderer>().bounds.size, new Vector3(i, 0, j)));
-                tiles[i + x, j + z] = tile;
-                tileScripts[i + x, j + z] = tile.GetComponent<TileScript>();
-                tileScripts[i + x, j + z].board = this;
-                tile.name = string.Format("Tile {0}, {1}", i + x, j + z);
-                tile.transform.parent = transform;
+  void Start() {
+    initializeMesh();
+  }
 
-                var tree = instantiateObject(treePrefab, Vector3.zero);
-                tree.transform.parent = tile.transform;
-                tree.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
-                tree.AddComponent<TerrainObjectScript>();
+  void initializeMesh() {
+    var mesh = newMesh(x, z);
+    filter.mesh = mesh;
+    meshCollider.sharedMesh = mesh;
+  }
 
-                var man = instantiateObject(manPrefab, Vector3.zero);
-                man.transform.parent = tile.transform;
-                man.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
-            }
+  private static Mesh newMesh(int x, int z) {
+    var vertices = new Vector3[(x + 1) * (z + 1) + (x * z)];
+    var uv = new Vector2[(x + 1) * (z + 1) + (x * z)];
+    var triangles = new int[12 * x * z];
+    
+    for (int i = 0; i <= x; i++) {
+      for (int j = 0; j <= z; j++) {
+        var vertexIndex = i + (j * ((2 * x) + 1));
+        vertices[vertexIndex] = new Vector3(i, 0, j) * Constants.SizeOfTile;
+        uv[vertexIndex] = new Vector2(vertices[vertexIndex].x / x, vertices[vertexIndex].z / z) / Constants.SizeOfTile;
+        if (i == x || j == z) {
+          continue;
         }
 
-        setupNeighbours();
+        var centerIndex = vertexIndex + x + 1;
+        vertices[centerIndex] = new Vector3(i + 0.5f, 0, j + 0.5f) * Constants.SizeOfTile;
+        uv[centerIndex] = new Vector2(vertices[centerIndex].x / x, vertices[centerIndex].z / z) / Constants.SizeOfTile;
+
+        var nextRowVertex = centerIndex + x;
+        var triangleIndex = (i * 12) + (j * x * 12);
+        triangles[triangleIndex] = centerIndex;
+        triangles[triangleIndex + 1] = vertexIndex + 1;
+        triangles[triangleIndex + 2] = vertexIndex;
+        triangles[triangleIndex + 3] = nextRowVertex;
+        triangles[triangleIndex + 4] = centerIndex;
+        triangles[triangleIndex + 5] = vertexIndex;
+        triangles[triangleIndex + 6] = vertexIndex + 1;
+        triangles[triangleIndex + 7] = centerIndex;
+        triangles[triangleIndex + 8] = nextRowVertex + 1;
+        triangles[triangleIndex + 9] = centerIndex;
+        triangles[triangleIndex + 10] = nextRowVertex;
+        triangles[triangleIndex + 11] = nextRowVertex + 1;
+      }
     }
 
-    private void setupNeighbours() {
-        for (int i = 0; i < x * 2; i++) {
-            for (int j = 0; j < z * 2; j++) {
-                List<TileScript> directNeighbours = new List<TileScript>();
-                List<TileScript> indirectNeighbours = new List<TileScript>();
-                bool left = i > 0;
-                bool right = i < x * 2 - 1;
-                bool up = j > 0;
-                bool down = j < z * 2 - 1;
-                if (left) {
-                    directNeighbours.Add(tileScripts[i - 1, j]);
-                    if (up) {
-                        indirectNeighbours.Add(tileScripts[i - 1, j - 1]);
-                    }
-                    if (down) {
-                        indirectNeighbours.Add(tileScripts[i - 1, j + 1]);
-                    }
-                }
-                if (right) {
-                    directNeighbours.Add(tileScripts[i + 1, j]);
-                    if (up) {
-                        indirectNeighbours.Add(tileScripts[i + 1, j - 1]);
-                    }
-                    if (down) {
-                        indirectNeighbours.Add(tileScripts[i + 1, j + 1]);
-                    }
-                }
-                if (up) {
-                    directNeighbours.Add(tileScripts[i, j - 1]);
-                }
-                if (down) {
-                    directNeighbours.Add(tileScripts[i, j + 1]);
-                }
+    var mesh = new Mesh();
+    mesh.vertices = vertices;
+    mesh.triangles = triangles;
+    mesh.uv = uv;
+    mesh.RecalculateNormals();
+    return mesh;
+  }
 
-                var tile = tileScripts[i, j];
-                tile.directNeighbours = directNeighbours;
-                tile.indirectNeighbours = indirectNeighbours;
-            }
-        }
+  private GameObject instantiateObject(Object prefab, Vector3 position) {
+    return (GameObject)Instantiate(prefab, position, Quaternion.identity);
+  }
+
+  // Update is called once per frame
+  void Update() {
+    if (Input.GetKey(KeyCode.Escape)) {
+      Application.Quit();
+      return;
     }
 
-    private GameObject instantiateObject(Object prefab, Vector3 position) {
-        return (GameObject)Instantiate(prefab, position, Quaternion.identity);
+    TileUpdateDirection direction;
+
+    if (Input.GetMouseButton(0)) {
+      direction = TileUpdateDirection.Up;
+    } else if (Input.GetMouseButton(1)) {
+      direction = TileUpdateDirection.Down;
+    } else {
+      return;
     }
 
-    // Update is called once per frame
-    void Update() {
-        if (Input.GetKey(KeyCode.Escape)) {
-            Application.Quit();
-            return;
-        }
-
-        TileUpdateDirection direction;
-        
-        if (Input.GetMouseButton(0)) {
-            direction = TileUpdateDirection.Up;
-        } else if (Input.GetMouseButton(1)) {
-            direction = TileUpdateDirection.Down;
-        } else {
-            return;
-        }
-
-        RaycastHit hit = new RaycastHit();
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (!Physics.Raycast(ray, out hit, float.MaxValue, 1 << 8)) {
-            return;
-        }
-
-        TileScript tileToUpdate = hit.collider.GetComponent<TileScript>();
-        updateTile(tileToUpdate, direction);
+    RaycastHit hit = new RaycastHit();
+    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+    if (!Physics.Raycast(ray, out hit, float.MaxValue, 1 << 8)) {
+      return;
     }
 
-    public void updateTile(TileScript tile, TileUpdateDirection direction) {
-        float change = heightChangeRate * Time.deltaTime;
-        BoardScript.adjustVertices(tile, change, updateType, direction);
-    }
+    TileScript tileToUpdate = hit.collider.GetComponent<TileScript>();
+    updateTile(tileToUpdate, direction);
+  }
 
-    public static void adjustVertices(TileScript tile, float changeRate, TileUpdateType type, TileUpdateDirection direction) {
-        var newVertices = type == TileUpdateType.LowerRaise ? raisedVertices(tile, changeRate, direction) :
-            flattenVertices(tile, changeRate, direction);
-        foreach (var neighbour in tile.neighbours) {
-            var offset = tile.transform.position - neighbour.transform.position;
-            var offsetedVertices = newVertices.Select(vertex => vertex + offset).ToList();
-            neighbour.vertices = TileScript.adjustedVertices(neighbour.vertices, offsetedVertices);
-            TileScript.adjustChildrenLocation(neighbour);
-        }
-    }
+  public void updateTile(TileScript tile, TileUpdateDirection direction) {
+    float change = heightChangeRate * Time.deltaTime;
+    BoardScript.adjustVertices(tile, change, updateType, direction);
+  }
 
-    private static List<Vector3> raisedVertices(TileScript tile, float changeRate, TileUpdateDirection direction) {
-        var change = direction == TileUpdateDirection.Up ? changeRate : -changeRate;
-        return TileScript.changeAllVerticesHeight(tile.vertices, change).ToList();
+  public static void adjustVertices(TileScript tile, float changeRate, TileUpdateType type, TileUpdateDirection direction) {
+    var newVertices = type == TileUpdateType.LowerRaise ? raisedVertices(tile, changeRate, direction) :
+        flattenVertices(tile, changeRate, direction);
+    foreach (var neighbour in tile.neighbours) {
+      var offset = tile.transform.position - neighbour.transform.position;
+      var offsetedVertices = newVertices.Select(vertex => vertex + offset).ToList();
+      neighbour.vertices = TileScript.adjustedVertices(neighbour.vertices, offsetedVertices);
+      TileScript.adjustChildrenLocation(neighbour);
     }
+  }
 
-    private static List<Vector3> flattenVertices(TileScript tile, float changeRate, TileUpdateDirection direction) {
-        return TileScript.flattenVertices(tile.vertices, changeRate, direction).ToList();
-    }
+  private static List<Vector3> raisedVertices(TileScript tile, float changeRate, TileUpdateDirection direction) {
+    var change = direction == TileUpdateDirection.Up ? changeRate : -changeRate;
+    return TileScript.changeAllVerticesHeight(tile.vertices, change).ToList();
+  }
 
-    public void setFlatten(bool active) {
-        if (!active) {
-            return;
-        }
-        updateType = TileUpdateType.Flatten;
-    }
+  private static List<Vector3> flattenVertices(TileScript tile, float changeRate, TileUpdateDirection direction) {
+    return TileScript.flattenVertices(tile.vertices, changeRate, direction).ToList();
+  }
 
-    public void setChangeHeight(bool active) {
-        if (!active) {
-            return;
-        }
-        updateType = TileUpdateType.LowerRaise;
+  public void setFlatten(bool active) {
+    if (!active) {
+      return;
     }
+    updateType = TileUpdateType.Flatten;
+  }
+
+  public void setChangeHeight(bool active) {
+    if (!active) {
+      return;
+    }
+    updateType = TileUpdateType.LowerRaise;
+  }
 }

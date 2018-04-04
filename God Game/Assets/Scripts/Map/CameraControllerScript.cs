@@ -8,12 +8,14 @@ public class CameraControllerScript : MonoBehaviour {
   public BoardScript board;
 
   Transform swivel, stick;
-  float zoom = 1f;
+  float zoom = 0.5f;
   float rotationAngle;
 
   void Awake() {
+    transform.position = new Vector3(board.x / 2, transform.position.y, board.z / 2) * Constants.SizeOfTile;
     swivel = transform.GetChild(0);
     stick = swivel.GetChild(0);
+    AdjustZoom(0);
   }
 
   void Update() {
@@ -69,10 +71,10 @@ public class CameraControllerScript : MonoBehaviour {
 
   Vector3 ClampPosition(Vector3 position) {
     float xMax = (board.x - 0.5f) * Constants.SizeOfTile;
-    position.x = Mathf.Clamp(position.x, -xMax, xMax);
+    position.x = Mathf.Clamp(position.x, 0, xMax);
 
     float zMax = (board.z - 0.5f) * Constants.SizeOfTile;
-    position.z = Mathf.Clamp(position.z, -zMax, zMax);
+    position.z = Mathf.Clamp(position.z, 0, zMax);
 
     return position;
   }
