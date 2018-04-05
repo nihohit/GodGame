@@ -117,7 +117,11 @@ public class BoardScript : MonoBehaviour {
     var minZ = Mathf.FloorToInt(resizedPoint.z);
 
     var vertices = filter.mesh.vertices;
-    adjustCornersUniformly(minX, minZ, vertices, direction);
+    if (updateType == TileUpdateType.Flatten) {
+      flattenVertices(minX, minZ, vertices, direction);
+    } else {
+      adjustCornersUniformly(minX, minZ, vertices, direction);
+    }
     adjustCenters(minX, minZ, vertices);
 
     filter.mesh.SetVertices(vertices.ToList());
@@ -134,6 +138,37 @@ public class BoardScript : MonoBehaviour {
     vertices[indexOfCornerVertex(maxX, sourceZ, x)] += change;
     vertices[indexOfCornerVertex(sourceX, maxZ, x)] += change;
     vertices[indexOfCornerVertex(maxX, maxZ, x)] += change;
+  }
+
+  private void flattenVertices(int sourceX, int sourceZ, Vector3[] vertices, TileUpdateDirection direction) {
+    var heightChange = heightChangeRate * Time.deltaTime;
+    var maxX = sourceX + 1;
+    var maxZ = sourceZ + 1;
+    var heights = new float[] {
+      vertices[indexOfCornerVertex(sourceX, sourceZ, x)].y,
+      vertices[indexOfCornerVertex(maxX, sourceZ, x)].y,
+      vertices[indexOfCornerVertex(sourceX, maxZ, x)].y,
+      vertices[indexOfCornerVertex(maxX, maxZ, x)].y
+    };
+    var min = heights.Min();
+    var max = heights.Max();
+    if (Mathf.Approximately(min, max)) {
+      return;
+    }
+    float difference = max - min;
+    float goal = direction == TileUpdateDirection.Up ? max : min;
+    flattenVertex(sourceX, sourceZ, vertices, difference, goal, heightChange, min, max);
+    flattenVertex(maxX, sourceZ, vertices, difference, goal, heightChange, min, max);
+    flattenVertex(sourceX, maxZ, vertices, difference, goal, heightChange, min, max);
+    flattenVertex(maxX, maxZ, vertices, difference, goal, heightChange, min, max);
+  }
+
+  void flattenVertex(int sourceX, int sourceZ, Vector3[] vertices, 
+    float difference, float goal, float heightChange, float min, float max) {
+    var vertex = vertices[indexOfCornerVertex(sourceX, sourceZ, x)];
+    var result = vertex.y + ((goal - vertex.y) * heightChange) / difference;
+    result = Mathf.Clamp(result, min, max);
+    vertices[indexOfCornerVertex(sourceX, sourceZ, x)] = new Vector3(vertex.x, result, vertex.z);
   }
 
   private void adjustCenters(int sourceX, int sourceZ, Vector3[] vertices) {
@@ -162,31 +197,6 @@ public class BoardScript : MonoBehaviour {
     accumulatedValues += vertices[indexOfCornerVertex(minX, maxZ, x)];
     accumulatedValues += vertices[indexOfCornerVertex(maxX, maxZ, x)];
     vertices[indexOfCenterVertex(minX, minZ, x)] = accumulatedValues / 4;
-  }
-
-  public void updateTile(TileScript tile, TileUpdateDirection direction) {
-    float change = heightChangeRate * Time.deltaTime;
-    BoardScript.adjustVertices(tile, change, updateType, direction);
-  }
-
-  public static void adjustVertices(TileScript tile, float changeRate, TileUpdateType type, TileUpdateDirection direction) {
-    var newVertices = type == TileUpdateType.LowerRaise ? raisedVertices(tile, changeRate, direction) :
-        flattenVertices(tile, changeRate, direction);
-    foreach (var neighbour in tile.neighbours) {
-      var offset = tile.transform.position - neighbour.transform.position;
-      var offsetedVertices = newVertices.Select(vertex => vertex + offset).ToList();
-      neighbour.vertices = TileScript.adjustedVertices(neighbour.vertices, offsetedVertices);
-      TileScript.adjustChildrenLocation(neighbour);
-    }
-  }
-
-  private static List<Vector3> raisedVertices(TileScript tile, float changeRate, TileUpdateDirection direction) {
-    var change = direction == TileUpdateDirection.Up ? changeRate : -changeRate;
-    return TileScript.changeAllVerticesHeight(tile.vertices, change).ToList();
-  }
-
-  private static List<Vector3> flattenVertices(TileScript tile, float changeRate, TileUpdateDirection direction) {
-    return TileScript.flattenVertices(tile.vertices, changeRate, direction).ToList();
   }
 
   public void setFlatten(bool active) {
