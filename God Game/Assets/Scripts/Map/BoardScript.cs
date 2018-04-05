@@ -22,6 +22,33 @@ public class BoardScript : MonoBehaviour {
 
   void Start() {
     initializeMesh();
+    addFeatures();
+  }
+
+  private void addFeatures() {
+    GameObject treePrefab = (GameObject)Resources.Load("Prefabs/Trees/RegularTrees/tree001");
+    GameObject manPrefab = (GameObject)Resources.Load("Prefabs/man");
+
+    
+    for (int i = 0; i <= x; i++) {
+      for (int j = 0; j <= z; j++) {
+        var tree = instantiateObject(treePrefab, Vector3.zero);
+        tree.transform.parent = transform;
+        tree.transform.localPosition = randomPositionOnTile(i, j);
+        tree.AddComponent<TerrainObjectScript>();
+
+        var man = instantiateObject(manPrefab, Vector3.zero);
+        man.transform.parent = transform;
+        man.transform.localPosition = randomPositionOnTile(i, j);
+      }
+    }
+  }
+
+  Vector3 randomPositionOnTile(int xCoord, int zCoord) {
+    var halfSize = Constants.SizeOfTile / 2;
+    var zOffset = (float)Assets.Scripts.Base.Randomizer.NextDouble(-halfSize, halfSize);
+    var xOffset = (float)Assets.Scripts.Base.Randomizer.NextDouble(-halfSize, halfSize);
+    return new Vector3(xOffset + xCoord * Constants.SizeOfTile, 0, zOffset + zCoord * Constants.SizeOfTile);
   }
 
   void initializeMesh() {
