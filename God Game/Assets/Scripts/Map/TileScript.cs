@@ -31,6 +31,7 @@ public class TileScript : MonoBehaviour {
             Assert.AreEqual(vertices.Count, kExpectedNumberOfVertices);
             var mesh = transform.GetComponent<MeshFilter>().mesh;
             mesh.SetVertices(value);
+            mesh.RecalculateNormals();
             GetComponent<MeshCollider>().sharedMesh = mesh;
         }
     }
@@ -60,6 +61,7 @@ public class TileScript : MonoBehaviour {
             1, 2, 4,
             2, 3, 4
         };
+        mesh.RecalculateNormals();
     }
 
     static public IEnumerable<Vector3> changeAllVerticesHeight(List<Vector3> vertices, 
