@@ -20,33 +20,50 @@ public class TileScript : MonoBehaviour {
 
   public BoardScript board { get; set; }
 
+  private MeshFilter meshFilter;
+  private MeshCollider meshCollider;
+
+  public Mesh internalMesh {
+    get {
+      return meshFilter.mesh;
+    }
+    set {
+      value.RecalculateNormals();
+      meshFilter.mesh = value;
+      meshCollider.sharedMesh = value;
+    }
+  }
+
   public List<Vector3> vertices {
     get {
       var vertices = new List<Vector3>();
-      transform.GetComponent<MeshFilter>().mesh.GetVertices(vertices);
+      internalMesh.GetVertices(vertices);
       return vertices;
     }
 
     set {
       Assert.AreEqual(vertices.Count, kExpectedNumberOfVertices);
-      var mesh = transform.GetComponent<MeshFilter>().mesh;
-      mesh.SetVertices(value);
-      mesh.RecalculateNormals();
-      GetComponent<MeshCollider>().sharedMesh = mesh;
+      internalMesh.SetVertices(value);
+      internalMesh = internalMesh;
     }
+  }
+
+  private void Awake() {
+    meshFilter = GetComponent<MeshFilter>();
+    meshCollider = GetComponent<MeshCollider>();
   }
 
   // Use this for initialization
   void Start() {
-    var mesh = transform.GetComponent<MeshFilter>().mesh;
-    GetComponent<MeshCollider>().sharedMesh = mesh;
+    var mesh = internalMesh;
     mesh.Clear();
+    var halfSize = Constants.SizeOfTile / 2;
     mesh.SetVertices(new List<Vector3> {
-      new Vector3(-5, 0, -5),
-      new Vector3(5, 0, -5),
+      new Vector3(-halfSize, 0, -halfSize),
+      new Vector3(halfSize, 0, -halfSize),
       new Vector3(0, 0, 0),
-      new Vector3(-5, 0, 5),
-      new Vector3(5, 0, 5)
+      new Vector3(-halfSize, 0, halfSize),
+      new Vector3(halfSize, 0, halfSize)
     });
     mesh.uv = new Vector2[] {new Vector2(0, 0),
       new Vector2(1, 0),
@@ -60,7 +77,7 @@ public class TileScript : MonoBehaviour {
       1, 2, 4,
       2, 3, 4
      };
-    mesh.RecalculateNormals();
+    internalMesh = mesh;
   }
 
   static public IEnumerable<Vector3> changeAllVerticesHeight(List<Vector3> vertices,
@@ -102,34 +119,49 @@ public class TileScript : MonoBehaviour {
       return template != default(Vector3) ? template : vertex;
     }).ToList();
 
-    adjustedVertices[2] = getCorners(adjustedVertices).Aggregate((sum, corner) => sum + corner) / 4;
+    adjustedVertices[2] = centerFromCorners(getCorners(adjustedVertices));
     return adjustedVertices;
   }
 
-  public static void pointInformationForTile(TileScript tile, Vector3 point, out Vector3 position, out Vector3 normal) {
-    var topHeight = tile.vertices.Select(vector => vector.y).Max();
-    var minHeight = tile.vertices.Select(vector => vector.y).Min();
-
-    if (Mathf.Approximately(topHeight, minHeight)) {
-      position = new Vector3(point.x, minHeight, point.z);
-      normal = Vector3.up;
-      return;
-    }
-
-    var source = new Vector3(point.x, topHeight, point.z);
-    RaycastHit hit = new RaycastHit();
-    Debug.Assert(Physics.Raycast(source, Vector3.down, out hit, topHeight - minHeight, 1 << 8));
-    position = new Vector3(point.x, hit.point.y, point.z);
-    normal = hit.normal;
+  public static Vector3 centerFromCorners(IEnumerable<Vector3> corners) {
+    return corners.Aggregate((sum, corner) => sum + corner) / 4;
   }
 
   public static void adjustChildrenLocation(TileScript tile) {
     foreach (Transform child in tile.transform) {
-      Vector3 position;
-      Vector3 normal;
-      pointInformationForTile(tile, child.position, out position, out normal);
-      child.position = position;
-      child.rotation = Quaternion.FromToRotation(Vector3.up, normal);
+      setPositionAndNormal(tile, child);
     }
+  }
+
+  private static void setPositionAndNormal(TileScript tile, Transform child) {
+    var positionWithoutHeight = child.transform.localPosition;
+    positionWithoutHeight.y = 0;
+
+    var vertices = tile.vertices;
+    var normals = tile.meshFilter.mesh.normals;
+    var distances = vertices
+      .Select(vertex => {
+        var vertexWithoutHeight = new Vector3(vertex.x, 0, vertex.z);
+        return Vector3.Distance(vertexWithoutHeight, positionWithoutHeight);
+      })
+      .ToList();
+    var indicesOfNearestPoints = distances
+      .OrderBy(distance => distance)
+      .Take(3)
+      .Select(distance => distances.IndexOf(distance));
+
+    var newHeight = 0f;
+    var newNormal = Vector3.zero;
+    var sumOfDistances = 0f;
+
+    foreach (var index in indicesOfNearestPoints) {
+      var distanceAsWeight = 1 / distances[index];
+      sumOfDistances += distanceAsWeight;
+      newHeight += vertices[index].y * distanceAsWeight;
+      newNormal += normals[index] * distanceAsWeight;
+    }
+
+    child.transform.localPosition = new Vector3(positionWithoutHeight.x, newHeight / sumOfDistances, positionWithoutHeight.z);
+    child.rotation = Quaternion.FromToRotation(Vector3.up, newNormal / sumOfDistances);
   }
 }
