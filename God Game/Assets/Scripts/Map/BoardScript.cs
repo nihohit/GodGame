@@ -20,7 +20,7 @@ public class BoardScript: MonoBehaviour {
   private void initializeTiles() {
     GameObject prefab = (GameObject)Resources.Load("Prefabs/Tile");
     GameObject treePrefab = (GameObject)Resources.Load("Prefabs/Trees/RegularTrees/tree001");
-    GameObject manPrefab = (GameObject)Resources.Load("Prefabs/man");
+
     tiles = new GameObject[x * 2, z * 2];
     tileScripts = new TileScript[x * 2, z * 2];
     for (int i = -x; i < x; i++) {
@@ -36,10 +36,6 @@ public class BoardScript: MonoBehaviour {
         tree.transform.parent = tile.transform;
         tree.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
         tree.AddComponent<TerrainObjectScript>();
-
-        var man = instantiateObject(manPrefab, Vector3.zero);
-        man.transform.parent = tile.transform;
-        man.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
       }
     }
 
