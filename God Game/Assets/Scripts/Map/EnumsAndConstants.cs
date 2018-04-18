@@ -11,12 +11,12 @@ static class Constants {
 }
 
 public enum TileUpdateType {
-    LowerRaise,
-    Flatten
+  LowerRaise,
+  Flatten
 }
 
 public enum TileUpdateDirection {
-    Up,
-    Down
+  Up,
+  Down
 }
 
