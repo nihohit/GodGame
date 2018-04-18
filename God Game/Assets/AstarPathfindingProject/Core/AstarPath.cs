@@ -157,6 +157,7 @@ public class AstarPath : VersionedMonoBehaviour {
 	 */
 	public PathLog logPathResults = PathLog.Normal;
 
+
 	/** @} */
 	#endregion
 

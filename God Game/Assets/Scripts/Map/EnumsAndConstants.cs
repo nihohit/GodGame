@@ -12,7 +12,8 @@ static class Constants {
 
 public enum TileUpdateType {
     LowerRaise,
-    Flatten
+    Flatten,
+    DirectPerson
 }
 
 public enum TileUpdateDirection {
