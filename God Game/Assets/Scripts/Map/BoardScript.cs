@@ -95,6 +95,10 @@ public class BoardScript: MonoBehaviour {
       return;
     }
 
+    if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) {
+      return;
+    }
+
     TileUpdateDirection direction;
 
     if (Input.GetMouseButton(0)) {
