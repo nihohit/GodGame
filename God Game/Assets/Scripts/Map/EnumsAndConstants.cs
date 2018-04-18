@@ -10,9 +10,10 @@ static class Constants {
   public const float SizeOfTile = 10;
 }
 
-public enum TileUpdateType {
-  LowerRaise,
-  Flatten
+public enum InteractionMode {
+  LowerRaiseTile,
+  FlattenTile,
+  AddTree
 }
 
 public enum TileUpdateDirection {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using Assets.Scripts.Base;
+using System;
 
 public class BoardScript: MonoBehaviour {
   public int heightChangeRate = 20;
@@ -11,7 +12,9 @@ public class BoardScript: MonoBehaviour {
 
   private TileScript[,] tileScripts;
   private GameObject[,] tiles;
-  private TileUpdateType updateType;
+  private InteractionMode interactionMode;
+  private GameObject currentTree;
+  private GameObject[] treePrefabs;
 
   // Use this for initialization
   void Start() {
@@ -20,7 +23,7 @@ public class BoardScript: MonoBehaviour {
 
   private void initializeTiles() {
     GameObject prefab = (GameObject)Resources.Load("Prefabs/Tile");
-    var treePrefabs = Resources.LoadAll<GameObject>("Prefabs/Trees/RegularTrees");
+    treePrefabs = Resources.LoadAll<GameObject>("Prefabs/Trees/RegularTrees");
 
     tiles = new GameObject[x * 2, z * 2];
     tileScripts = new TileScript[x * 2, z * 2];
@@ -84,7 +87,7 @@ public class BoardScript: MonoBehaviour {
     }
   }
 
-  private GameObject instantiateObject(Object prefab, Vector3 position) {
+  private GameObject instantiateObject(UnityEngine.Object prefab, Vector3 position) {
     return (GameObject)Instantiate(prefab, position, Quaternion.identity);
   }
 
@@ -99,8 +102,43 @@ public class BoardScript: MonoBehaviour {
       return;
     }
 
-    TileUpdateDirection direction;
+    if (interactionMode == InteractionMode.AddTree) {
+      handleTreeInteraction();
+    } else {
+      handleTileInteraction();
+    }
+  }
 
+  private void handleTreeInteraction() {
+    var hit = currentMousePointedLoaction();
+    if (!hit.HasValue) {
+      return;
+    }
+
+    moveCurrentTree(hit.Value);
+
+    if (Input.GetMouseButton(0)) {
+      addCurrentTree(hit.Value);
+    } else if (Input.GetMouseButton(1)) {
+      removeExistingTree();
+    }
+  }
+
+  private void removeExistingTree() {
+    throw new NotImplementedException();
+  }
+
+  private void addCurrentTree(RaycastHit hit) {
+    throw new NotImplementedException();
+  }
+
+  private void moveCurrentTree(RaycastHit hit) {
+    currentTree.transform.position = hit.point;
+    currentTree.transform.rotation = Quaternion.FromToRotation(Vector3.up,hit.normal);
+  }
+
+  private void handleTileInteraction() {
+    TileUpdateDirection direction;
     if (Input.GetMouseButton(0)) {
       direction = TileUpdateDirection.Up;
     } else if (Input.GetMouseButton(1)) {
@@ -109,23 +147,31 @@ public class BoardScript: MonoBehaviour {
       return;
     }
 
-    RaycastHit hit = new RaycastHit();
-    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-    if (!Physics.Raycast(ray, out hit, float.MaxValue, 1 << 8)) {
+    var hit = currentMousePointedLoaction();
+    if (!hit.HasValue) {
       return;
     }
 
-    TileScript tileToUpdate = hit.collider.GetComponent<TileScript>();
+    TileScript tileToUpdate = hit.Value.collider.GetComponent<TileScript>();
     updateTile(tileToUpdate, direction);
+  }
+
+  private System.Nullable<RaycastHit> currentMousePointedLoaction() {
+    RaycastHit hit = new RaycastHit();
+    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+    if (!Physics.Raycast(ray, out hit, float.MaxValue, 1 << 8)) {
+      return null;
+    }
+    return hit;
   }
 
   public void updateTile(TileScript tile, TileUpdateDirection direction) {
     float change = heightChangeRate * Time.deltaTime;
-    BoardScript.adjustVertices(tile, change, updateType, direction);
+    BoardScript.adjustVertices(tile, change, interactionMode, direction);
   }
 
-  public static void adjustVertices(TileScript tile, float changeRate, TileUpdateType type, TileUpdateDirection direction) {
-    var newVertices = type == TileUpdateType.LowerRaise ? raisedVertices(tile, changeRate, direction) :
+  public static void adjustVertices(TileScript tile, float changeRate, InteractionMode type, TileUpdateDirection direction) {
+    var newVertices = type == InteractionMode.LowerRaiseTile ? raisedVertices(tile, changeRate, direction) :
         flattenVertices(tile, changeRate, direction);
     foreach (var neighbour in tile.neighbours) {
       var offset = tile.transform.position - neighbour.transform.position;
@@ -148,13 +194,27 @@ public class BoardScript: MonoBehaviour {
     if (!active) {
       return;
     }
-    updateType = TileUpdateType.Flatten;
+    interactionMode = InteractionMode.FlattenTile;
   }
 
   public void setChangeHeight(bool active) {
     if (!active) {
       return;
     }
-    updateType = TileUpdateType.LowerRaise;
+    interactionMode = InteractionMode.LowerRaiseTile;
+  }
+
+  public void setAddTree(bool active) {
+    if (!active) {
+      Destroy(currentTree);
+      return;
+    }
+    currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero);
+    foreach(var material in currentTree.GetComponent<Renderer>().materials) {
+      var color = material.color;
+      color.a = 0.3f;
+      material.color = color;
+    }
+    interactionMode = InteractionMode.AddTree;
   }
 }
