@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using Assets.Scripts.Base;
 
 public class BoardScript: MonoBehaviour {
   public int heightChangeRate = 20;
@@ -19,7 +20,7 @@ public class BoardScript: MonoBehaviour {
 
   private void initializeTiles() {
     GameObject prefab = (GameObject)Resources.Load("Prefabs/Tile");
-    GameObject treePrefab = (GameObject)Resources.Load("Prefabs/Trees/RegularTrees/tree001");
+    var treePrefabs = Resources.LoadAll<GameObject>("Prefabs/Trees/RegularTrees");
 
     tiles = new GameObject[x * 2, z * 2];
     tileScripts = new TileScript[x * 2, z * 2];
@@ -32,9 +33,9 @@ public class BoardScript: MonoBehaviour {
         tile.name = string.Format("Tile {0}, {1}", i + x, j + z);
         tile.transform.parent = transform;
 
-        var tree = instantiateObject(treePrefab, Vector3.zero);
+        var tree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero);
         tree.transform.parent = tile.transform;
-        tree.transform.localPosition = new Vector3((float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
+        tree.transform.localPosition = new Vector3((float)Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
         tree.AddComponent<TerrainObjectScript>();
       }
     }
