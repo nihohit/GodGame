@@ -21,7 +21,7 @@ GameObject:
   - component: {fileID: 4000011942536910}
   - component: {fileID: 33000013250575802}
   - component: {fileID: 23000012487414382}
-  - component: {fileID: 64000010557812012}
+  - component: {fileID: 136063270719539738}
   m_Layer: 0
   m_Name: tree008
   m_TagString: Untagged
@@ -51,6 +51,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -67,6 +68,7 @@ MeshRenderer:
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -82,8 +84,8 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000011414968580}
   m_Mesh: {fileID: 4300000, guid: 9cc653c807671fb4fafc4af81f4363c1, type: 3}
---- !u!64 &64000010557812012
-MeshCollider:
+--- !u!136 &136063270719539738
+CapsuleCollider:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
@@ -91,8 +93,7 @@ MeshCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Convex: 0
-  m_InflateMesh: 0
-  m_SkinWidth: 0.01
-  m_Mesh: {fileID: 4300000, guid: 9cc653c807671fb4fafc4af81f4363c1, type: 3}
+  m_Radius: 2.94975
+  m_Height: 8.147396
+  m_Direction: 1
+  m_Center: {x: 0.8291558, y: 4.073698, z: 0.22164845}
