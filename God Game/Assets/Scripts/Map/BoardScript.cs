@@ -38,8 +38,7 @@ public class BoardScript: MonoBehaviour {
 
         var tree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero);
         tree.transform.parent = tile.transform;
-        tree.transform.localPosition = new Vector3((float)Randomizer.NextDouble(-5, 5), 0, (float)Assets.Scripts.Base.Randomizer.NextDouble(-5, 5));
-        tree.AddComponent<TerrainObjectScript>();
+        tree.transform.localPosition = new Vector3((float)Randomizer.NextDouble(-5, 5), 0, (float)Randomizer.NextDouble(-5, 5));
       }
     }
 
@@ -209,7 +208,7 @@ public class BoardScript: MonoBehaviour {
       Destroy(currentTree);
       return;
     }
-    currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero).AddComponent<TerrainObjectScript>();
+    currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero).GetComponent<TerrainObjectScript>();
     currentTree.TemporaryObject = true;
     foreach (var material in currentTree.GetComponent<Renderer>().materials) {
       var color = material.color;
