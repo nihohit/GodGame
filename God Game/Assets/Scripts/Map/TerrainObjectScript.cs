@@ -3,6 +3,8 @@ using UnityEngine;
 using System.Linq;
 
 public class TerrainObjectScript: MonoBehaviour {
+  private readonly float kMaxAngle = 45;
+
   private bool temporaryObject;
   public bool TemporaryObject { get {
       return temporaryObject;
@@ -31,8 +33,12 @@ public class TerrainObjectScript: MonoBehaviour {
       return;
     }
 
-    if (Vector3.Angle(transform.up, Vector3.up) > 45) {
-      TerrainObjectScript.freeObject(transform);
+    if (!holdableAngle()) {
+      if (TemporaryObject) {
+        setRedColor();
+      } else {
+        TerrainObjectScript.freeObject(transform);
+      }
     }
   }
 
@@ -66,6 +72,9 @@ public class TerrainObjectScript: MonoBehaviour {
   }
 
   private void setRedColor() {
+    if (originalColors != null) {
+      return;
+    }
     var materials = GetComponent<Renderer>().materials;
     originalColors = materials.Select(material => material.color).ToList();
     foreach (var material in materials) {
@@ -74,11 +83,30 @@ public class TerrainObjectScript: MonoBehaviour {
   }
 
   private void setOriginalColors() {
+    if (originalColors == null) {
+      return;
+    }
     var materials = GetComponent<Renderer>().materials.ToList();
     foreach (var material in materials) {
       var index = materials.IndexOf(material);
       material.color = originalColors[index];
     }
     originalColors = null;
+  }
+
+  public bool CanBePlanted() {
+    return temporaryObject && holdableAngle() && collidingObjects.Count > 0;
+  }
+
+  private bool holdableAngle() {
+    return Vector3.Angle(transform.up, Vector3.up) < kMaxAngle;
+  }
+
+  public void RemoveCollidingObjects() {
+    foreach(var obj in collidingObjects) {
+      Destroy(obj);
+    }
+    collidingObjects.Clear();
+    setOriginalColors();
   }
 }

@@ -13,7 +13,7 @@ public class BoardScript: MonoBehaviour {
   private TileScript[,] tileScripts;
   private GameObject[,] tiles;
   private InteractionMode interactionMode;
-  private GameObject currentTree;
+  private TerrainObjectScript currentTree;
   private GameObject[] treePrefabs;
 
   // Use this for initialization
@@ -125,7 +125,7 @@ public class BoardScript: MonoBehaviour {
   }
 
   private void removeExistingTree() {
-    throw new NotImplementedException();
+    currentTree.RemoveCollidingObjects();
   }
 
   private void addCurrentTree(RaycastHit hit) {
@@ -209,8 +209,8 @@ public class BoardScript: MonoBehaviour {
       Destroy(currentTree);
       return;
     }
-    currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero);
-    currentTree.AddComponent<TerrainObjectScript>().TemporaryObject = true;
+    currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero).AddComponent<TerrainObjectScript>();
+    currentTree.TemporaryObject = true;
     foreach (var material in currentTree.GetComponent<Renderer>().materials) {
       var color = material.color;
       color.a = 0.3f;
