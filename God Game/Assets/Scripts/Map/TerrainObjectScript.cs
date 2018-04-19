@@ -29,12 +29,12 @@ public class TerrainObjectScript: MonoBehaviour {
       return;
     }
 
-    if (transform.parent == null) {
+    if (transform.parent == null && !temporaryObject) {
       return;
     }
 
     if (!holdableAngle()) {
-      if (TemporaryObject) {
+      if (temporaryObject) {
         setRedColor();
       } else {
         TerrainObjectScript.freeObject(transform);
@@ -95,7 +95,7 @@ public class TerrainObjectScript: MonoBehaviour {
   }
 
   public bool CanBePlanted() {
-    return temporaryObject && holdableAngle() && collidingObjects.Count > 0;
+    return temporaryObject && holdableAngle() && collidingObjects.Count == 0;
   }
 
   private bool holdableAngle() {

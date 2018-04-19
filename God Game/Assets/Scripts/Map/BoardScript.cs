@@ -128,7 +128,26 @@ public class BoardScript: MonoBehaviour {
   }
 
   private void addCurrentTree(RaycastHit hit) {
-    throw new NotImplementedException();
+    if (!currentTree.CanBePlanted()) {
+      return;
+    }
+
+    TileScript tile = hit.collider.GetComponent<TileScript>();
+    currentTree.transform.parent = tile.transform;
+    currentTree.TemporaryObject = false;
+    foreach (var material in currentTree.GetComponent<Renderer>().materials) {
+      var color = material.color;
+      color.a = 1f;
+      material.color = color;
+    }
+
+    currentTree = null;
+    StartCoroutine(DelayedCreateTree());
+  }
+
+  private IEnumerator DelayedCreateTree() {
+    yield return new WaitForSeconds(0.05f);
+    createNewTree();
   }
 
   private void moveCurrentTree(RaycastHit hit) {
@@ -208,6 +227,10 @@ public class BoardScript: MonoBehaviour {
       Destroy(currentTree);
       return;
     }
+    createNewTree();
+  }
+
+  private void createNewTree() {
     currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero).GetComponent<TerrainObjectScript>();
     currentTree.TemporaryObject = true;
     foreach (var material in currentTree.GetComponent<Renderer>().materials) {
