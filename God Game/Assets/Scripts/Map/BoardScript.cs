@@ -210,7 +210,8 @@ public class BoardScript: MonoBehaviour {
       return;
     }
     currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero);
-    foreach(var material in currentTree.GetComponent<Renderer>().materials) {
+    currentTree.AddComponent<TerrainObjectScript>().TemporaryObject = true;
+    foreach (var material in currentTree.GetComponent<Renderer>().materials) {
       var color = material.color;
       color.a = 0.3f;
       material.color = color;
