@@ -15,6 +15,7 @@ public class BoardScript: MonoBehaviour {
   private InteractionMode interactionMode;
   private TerrainObjectScript currentTree;
   private GameObject[] treePrefabs;
+  private bool ignoreTreeAddition;
 
   // Use this for initialization
   void Start() {
@@ -119,16 +120,16 @@ public class BoardScript: MonoBehaviour {
     if (Input.GetMouseButton(0)) {
       addCurrentTree(hit.Value);
     } else if (Input.GetMouseButton(1)) {
-      removeExistingTree();
+      removeExistingTrees();
     }
   }
 
-  private void removeExistingTree() {
+  private void removeExistingTrees() {
     currentTree.RemoveCollidingObjects();
   }
 
   private void addCurrentTree(RaycastHit hit) {
-    if (!currentTree.CanBePlanted()) {
+    if (currentTree == null || !currentTree.CanBePlanted() || ignoreTreeAddition) {
       return;
     }
 
@@ -141,16 +142,20 @@ public class BoardScript: MonoBehaviour {
       material.color = color;
     }
 
-    currentTree = null;
-    StartCoroutine(DelayedCreateTree());
+    createNewTree();
+    StartCoroutine(BlockTreeAddition());
   }
 
-  private IEnumerator DelayedCreateTree() {
+  private IEnumerator BlockTreeAddition() {
+    ignoreTreeAddition = true;
     yield return new WaitForSeconds(0.05f);
-    createNewTree();
+    ignoreTreeAddition = false;
   }
 
   private void moveCurrentTree(RaycastHit hit) {
+    if (currentTree == null) {
+      return;
+    }
     currentTree.transform.position = hit.point;
     currentTree.transform.rotation = Quaternion.FromToRotation(Vector3.up,hit.normal);
   }
@@ -232,6 +237,7 @@ public class BoardScript: MonoBehaviour {
 
   private void createNewTree() {
     currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero).GetComponent<TerrainObjectScript>();
+    currentTree.transform.position = new Vector3(999, 0, 999);
     currentTree.TemporaryObject = true;
     foreach (var material in currentTree.GetComponent<Renderer>().materials) {
       var color = material.color;
