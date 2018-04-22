@@ -14,6 +14,7 @@ public class BoardScript: MonoBehaviour {
   private GameObject[,] tiles;
   private InteractionMode interactionMode;
   private TerrainObjectScript currentTree;
+  private Vector3 currentTreeEulerRotation;
   private GameObject[] treePrefabs;
   private bool ignoreTreeAddition;
 
@@ -40,6 +41,7 @@ public class BoardScript: MonoBehaviour {
         var tree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero);
         tree.transform.parent = tile.transform;
         tree.transform.localPosition = new Vector3((float)Randomizer.NextDouble(-5, 5), 0, (float)Randomizer.NextDouble(-5, 5));
+        randomRotationAndScale(tree.transform);
       }
     }
 
@@ -110,7 +112,7 @@ public class BoardScript: MonoBehaviour {
   }
 
   private void handleTreeInteraction() {
-    var hit = currentMousePointedLoaction();
+    var hit = currentMousePointedLocation();
     if (!hit.HasValue) {
       return;
     }
@@ -157,7 +159,8 @@ public class BoardScript: MonoBehaviour {
       return;
     }
     currentTree.transform.position = hit.point;
-    currentTree.transform.rotation = Quaternion.FromToRotation(Vector3.up,hit.normal);
+    currentTree.transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+    currentTree.transform.Rotate(currentTreeEulerRotation);
   }
 
   private void handleTileInteraction() {
@@ -170,7 +173,7 @@ public class BoardScript: MonoBehaviour {
       return;
     }
 
-    var hit = currentMousePointedLoaction();
+    var hit = currentMousePointedLocation();
     if (!hit.HasValue) {
       return;
     }
@@ -179,7 +182,7 @@ public class BoardScript: MonoBehaviour {
     updateTile(tileToUpdate, direction);
   }
 
-  private System.Nullable<RaycastHit> currentMousePointedLoaction() {
+  private System.Nullable<RaycastHit> currentMousePointedLocation() {
     RaycastHit hit = new RaycastHit();
     Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
     if (!Physics.Raycast(ray, out hit, float.MaxValue, 1 << 8)) {
@@ -239,11 +242,20 @@ public class BoardScript: MonoBehaviour {
     currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero).GetComponent<TerrainObjectScript>();
     currentTree.transform.position = new Vector3(999, 0, 999);
     currentTree.TemporaryObject = true;
+    randomRotationAndScale(currentTree.transform);
+    currentTreeEulerRotation = currentTree.transform.localEulerAngles;
     foreach (var material in currentTree.GetComponent<Renderer>().materials) {
       var color = material.color;
       color.a = 0.3f;
       material.color = color;
     }
     interactionMode = InteractionMode.AddTree;
+  }
+
+  private void randomRotationAndScale(Transform obj) {
+    var rotation = Randomizer.Next(360);
+    obj.localRotation = Quaternion.Euler(0f, rotation, 0f);
+    var scale = (float)Randomizer.NextDouble(-0.2, 0.2);
+    obj.localScale += new Vector3(scale, scale, scale);
   }
 }
