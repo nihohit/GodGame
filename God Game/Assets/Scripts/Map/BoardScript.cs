@@ -9,7 +9,9 @@ public class BoardScript: MonoBehaviour {
   public int heightChangeRate = 20;
   public int x, z;
   public bool flatten, changeHeight;
+	public GameObject birdControlObject;
 
+	private lb_BirdController birdControl;
   private TileScript[,] tileScripts;
   private GameObject[,] tiles;
   private InteractionMode interactionMode;
@@ -18,7 +20,8 @@ public class BoardScript: MonoBehaviour {
   private bool ignoreTreeAddition;
 
   // Use this for initialization
-  void Start() {
+  void Awake() {
+    birdControl = birdControlObject.GetComponent<lb_BirdController>();
     initializeTiles();
   }
 
@@ -37,7 +40,7 @@ public class BoardScript: MonoBehaviour {
         tile.name = string.Format("Tile {0}, {1}", i + x, j + z);
         tile.transform.parent = transform;
 
-        var tree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero);
+        var tree = instantiateTree(Vector3.zero);
         tree.transform.parent = tile.transform;
         tree.transform.localPosition = new Vector3((float)Randomizer.NextDouble(-5, 5), 0, (float)Randomizer.NextDouble(-5, 5));
       }
@@ -235,9 +238,16 @@ public class BoardScript: MonoBehaviour {
     createNewTree();
   }
 
+  public void setAddBird(bool active) {
+    if (!active) {
+      Destroy(currentTree);
+      return;
+    }
+    birdControl.SpawnAmount(1);
+  }
+
   private void createNewTree() {
-    currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero).GetComponent<TerrainObjectScript>();
-    currentTree.transform.position = new Vector3(999, 0, 999);
+    currentTree = instantiateTree(new Vector3(999, 0, 999));
     currentTree.TemporaryObject = true;
     foreach (var material in currentTree.GetComponent<Renderer>().materials) {
       var color = material.color;
@@ -245,5 +255,9 @@ public class BoardScript: MonoBehaviour {
       material.color = color;
     }
     interactionMode = InteractionMode.AddTree;
+  }
+
+  private TerrainObjectScript instantiateTree(Vector3 position) {
+    return instantiateObject(treePrefabs[0], position).GetComponent<TerrainObjectScript>();
   }
 }
