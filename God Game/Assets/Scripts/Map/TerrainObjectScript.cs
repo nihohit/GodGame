@@ -35,7 +35,7 @@ public class TerrainObjectScript: MonoBehaviour {
 
     if (!holdableAngle()) {
       if (temporaryObject) {
-        setRedColor();
+        SetRedColor();
       } else {
         TerrainObjectScript.freeObject(transform);
       }
@@ -47,6 +47,15 @@ public class TerrainObjectScript: MonoBehaviour {
     Rigidbody rigidBody = obj.gameObject.AddComponent<Rigidbody>();
     rigidBody.mass = 5;
     rigidBody.useGravity = true;
+    removePerchChildren(obj);
+  }
+
+  private static void removePerchChildren(Transform obj) {
+    foreach(Transform child in obj) {
+      if (child.tag == "lb_perchTarget") {
+        Destroy(child.gameObject);
+      }
+    }
   }
 
   private void OnTriggerEnter(Collider other) {
@@ -54,10 +63,10 @@ public class TerrainObjectScript: MonoBehaviour {
       return;
     }
     if (collidingObjects.Count == 0) {
-      setRedColor();
+      SetRedColor();
     }
     collidingObjects.Add(other.gameObject);
-    other.gameObject.GetComponent<TerrainObjectScript>().setRedColor();
+    other.gameObject.GetComponent<TerrainObjectScript>().SetRedColor();
   }
 
   private void OnTriggerExit(Collider other) {
@@ -65,13 +74,13 @@ public class TerrainObjectScript: MonoBehaviour {
       return;
     }
     collidingObjects.Remove(other.gameObject);
-    other.gameObject.GetComponent<TerrainObjectScript>().setOriginalColors();
+    other.gameObject.GetComponent<TerrainObjectScript>().SetOriginalColors();
     if (collidingObjects.Count == 0) {
-      setOriginalColors();
+      SetOriginalColors();
     }
   }
 
-  private void setRedColor() {
+  public void SetRedColor() {
     if (originalColors != null) {
       return;
     }
@@ -82,7 +91,7 @@ public class TerrainObjectScript: MonoBehaviour {
     }
   }
 
-  private void setOriginalColors() {
+  public void SetOriginalColors() {
     if (originalColors == null) {
       return;
     }
@@ -107,6 +116,6 @@ public class TerrainObjectScript: MonoBehaviour {
       Destroy(obj);
     }
     collidingObjects.Clear();
-    setOriginalColors();
+    SetOriginalColors();
   }
 }
