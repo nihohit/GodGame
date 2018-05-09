@@ -13,7 +13,8 @@ static class Constants {
 public enum InteractionMode {
   LowerRaiseTile,
   FlattenTile,
-  AddTree
+  AddTree,
+  AddBird
 }
 
 public enum TileUpdateDirection {

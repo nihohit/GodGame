@@ -18,6 +18,7 @@ public class BoardScript: MonoBehaviour {
   private TerrainObjectScript currentTree;
   private GameObject[] treePrefabs;
   private bool ignoreTreeAddition;
+  private TerrainObjectScript lastTouchedObject;
 
   #region initialization
 
@@ -105,10 +106,17 @@ public class BoardScript: MonoBehaviour {
       return;
     }
 
-    if (interactionMode == InteractionMode.AddTree) {
-      handleTreeInteraction();
-    } else {
-      handleTileInteraction();
+    switch(interactionMode) {
+      case InteractionMode.AddBird:
+        handleBirdInteraction();
+        break;
+      case InteractionMode.AddTree:
+        handleTreeInteraction();
+        break;
+      case InteractionMode.LowerRaiseTile:
+      case InteractionMode.FlattenTile:
+        handleTileInteraction();
+        break;
     }
   }
 
@@ -215,6 +223,25 @@ public class BoardScript: MonoBehaviour {
 
   #endregion
 
+  #region bird interaction
+
+  private void handleBirdInteraction() {
+    if (lastTouchedObject != null) {
+      lastTouchedObject.SetOriginalColors();
+    }
+
+    var newObjecthit = this.CurrentMousePointedTree();
+    if (newObjecthit.HasValue) {
+      lastTouchedObject = newObjecthit.Value.collider.gameObject.GetComponent<TerrainObjectScript>();
+      lastTouchedObject.SetRedColor();
+    } else if (lastTouchedObject != null) {
+      lastTouchedObject.SetOriginalColors();
+      lastTouchedObject = null;
+    }
+  }
+
+  #endregion
+
   #region interaction mode setters
 
   public void setFlatten(bool active) {
@@ -245,7 +272,7 @@ public class BoardScript: MonoBehaviour {
       Destroy(currentTree);
       return;
     }
-    birdControl.SpawnAmount(1);
+    interactionMode = InteractionMode.AddBird;
   }
 
   #endregion
