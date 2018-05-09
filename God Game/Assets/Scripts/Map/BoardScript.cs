@@ -19,8 +19,10 @@ public class BoardScript: MonoBehaviour {
   private GameObject[] treePrefabs;
   private bool ignoreTreeAddition;
 
+  #region initialization
+
   // Use this for initialization
-  void Awake() {
+  void Start() {
     birdControl = birdControlObject.GetComponent<lb_BirdController>();
     initializeTiles();
   }
@@ -33,7 +35,7 @@ public class BoardScript: MonoBehaviour {
     tileScripts = new TileScript[x * 2, z * 2];
     for (int i = -x; i < x; i++) {
       for (int j = -z; j < z; j++) {
-        var tile = instantiateObject(prefab, Vector3.Scale(prefab.GetComponent<Renderer>().bounds.size, new Vector3(i, 0, j)));
+        var tile = this.InstantiateObject(prefab, Vector3.Scale(prefab.GetComponent<Renderer>().bounds.size, new Vector3(i, 0, j)));
         tiles[i + x, j + z] = tile;
         tileScripts[i + x, j + z] = tile.GetComponent<TileScript>();
         tileScripts[i + x, j + z].board = this;
@@ -90,9 +92,7 @@ public class BoardScript: MonoBehaviour {
     }
   }
 
-  private GameObject instantiateObject(UnityEngine.Object prefab, Vector3 position) {
-    return (GameObject)Instantiate(prefab, position, Quaternion.identity);
-  }
+  #endregion
 
   // Update is called once per frame
   void Update() {
@@ -112,8 +112,10 @@ public class BoardScript: MonoBehaviour {
     }
   }
 
+  #region tree interaction
+
   private void handleTreeInteraction() {
-    var hit = currentMousePointedLoaction();
+    var hit = this.CurrentMousePointedTile();
     if (!hit.HasValue) {
       return;
     }
@@ -160,8 +162,12 @@ public class BoardScript: MonoBehaviour {
       return;
     }
     currentTree.transform.position = hit.point;
-    currentTree.transform.rotation = Quaternion.FromToRotation(Vector3.up,hit.normal);
+    currentTree.transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
   }
+
+  #endregion
+
+  #region tile interaction
 
   private void handleTileInteraction() {
     TileUpdateDirection direction;
@@ -173,22 +179,13 @@ public class BoardScript: MonoBehaviour {
       return;
     }
 
-    var hit = currentMousePointedLoaction();
+    var hit = this.CurrentMousePointedTile();
     if (!hit.HasValue) {
       return;
     }
 
     TileScript tileToUpdate = hit.Value.collider.GetComponent<TileScript>();
     updateTile(tileToUpdate, direction);
-  }
-
-  private System.Nullable<RaycastHit> currentMousePointedLoaction() {
-    RaycastHit hit = new RaycastHit();
-    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-    if (!Physics.Raycast(ray, out hit, float.MaxValue, 1 << 8)) {
-      return null;
-    }
-    return hit;
   }
 
   public void updateTile(TileScript tile, TileUpdateDirection direction) {
@@ -216,6 +213,10 @@ public class BoardScript: MonoBehaviour {
     return TileScript.flattenVertices(tile.vertices, changeRate, direction).ToList();
   }
 
+  #endregion
+
+  #region interaction mode setters
+
   public void setFlatten(bool active) {
     if (!active) {
       return;
@@ -235,6 +236,7 @@ public class BoardScript: MonoBehaviour {
       Destroy(currentTree);
       return;
     }
+    interactionMode = InteractionMode.AddTree;
     createNewTree();
   }
 
@@ -246,6 +248,8 @@ public class BoardScript: MonoBehaviour {
     birdControl.SpawnAmount(1);
   }
 
+  #endregion
+
   private void createNewTree() {
     currentTree = instantiateTree(new Vector3(999, 0, 999));
     currentTree.TemporaryObject = true;
@@ -254,10 +258,9 @@ public class BoardScript: MonoBehaviour {
       color.a = 0.3f;
       material.color = color;
     }
-    interactionMode = InteractionMode.AddTree;
   }
 
   private TerrainObjectScript instantiateTree(Vector3 position) {
-    return instantiateObject(treePrefabs[0], position).GetComponent<TerrainObjectScript>();
+    return this.InstantiateObject(treePrefabs[0], position).GetComponent<TerrainObjectScript>();
   }
 }
