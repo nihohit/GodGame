@@ -11,20 +11,20 @@ public class BoardScript: MonoBehaviour {
   public bool flatten, changeHeight;
 	public GameObject birdControlObject;
 
-	private lb_BirdController birdControl;
+	private BirdControlScript birdControl;
   private TileScript[,] tileScripts;
   private GameObject[,] tiles;
   private InteractionMode interactionMode;
   private TerrainObjectScript currentTree;
   private GameObject[] treePrefabs;
-  private bool ignoreTreeAddition;
+  private bool ignoreContentAddition;
   private TerrainObjectScript lastTouchedObject;
 
   #region initialization
 
   // Use this for initialization
   void Start() {
-    birdControl = birdControlObject.GetComponent<lb_BirdController>();
+    birdControl = birdControlObject.GetComponent<BirdControlScript>();
     initializeTiles();
   }
 
@@ -142,7 +142,7 @@ public class BoardScript: MonoBehaviour {
   }
 
   private void addCurrentTree(RaycastHit hit) {
-    if (currentTree == null || !currentTree.CanBePlanted() || ignoreTreeAddition) {
+    if (currentTree == null || !currentTree.CanBePlanted() || ignoreContentAddition) {
       return;
     }
 
@@ -156,13 +156,13 @@ public class BoardScript: MonoBehaviour {
     }
 
     createNewTree();
-    StartCoroutine(BlockTreeAddition());
+    StartCoroutine(BlockContentAddition());
   }
 
-  private IEnumerator BlockTreeAddition() {
-    ignoreTreeAddition = true;
+  private IEnumerator BlockContentAddition() {
+    ignoreContentAddition = true;
     yield return new WaitForSeconds(0.05f);
-    ignoreTreeAddition = false;
+    ignoreContentAddition = false;
   }
 
   private void moveCurrentTree(RaycastHit hit) {
@@ -231,12 +231,30 @@ public class BoardScript: MonoBehaviour {
     }
 
     var newObjecthit = this.CurrentMousePointedTree();
-    if (newObjecthit.HasValue) {
-      lastTouchedObject = newObjecthit.Value.collider.gameObject.GetComponent<TerrainObjectScript>();
-      lastTouchedObject.SetRedColor();
-    } else if (lastTouchedObject != null) {
-      lastTouchedObject.SetOriginalColors();
+    if (!newObjecthit.HasValue) {
       lastTouchedObject = null;
+      return;
+    }
+
+    lastTouchedObject = newObjecthit.Value.collider.gameObject.GetComponent<TerrainObjectScript>();
+    if (!lastTouchedObject.isPlanted()) {
+      return;
+    }
+    Transform freePerch = null;
+    foreach (Transform child in lastTouchedObject.transform) {
+      if (child.GetComponent<PerchScript>() != null && child.childCount == 0) {
+        freePerch = child;
+        break;
+      }
+    }
+    if (freePerch == null) {
+      return;
+    }
+    lastTouchedObject.SetRedColor();
+
+    if (Input.GetMouseButton(0) && lastTouchedObject != null && !ignoreContentAddition) {
+      birdControl.AddBird(freePerch);
+      StartCoroutine(BlockContentAddition());
     }
   }
 
@@ -269,7 +287,9 @@ public class BoardScript: MonoBehaviour {
 
   public void setAddBird(bool active) {
     if (!active) {
-      Destroy(currentTree);
+      if (lastTouchedObject != null) {
+        lastTouchedObject.SetOriginalColors();
+      }
       return;
     }
     interactionMode = InteractionMode.AddBird;

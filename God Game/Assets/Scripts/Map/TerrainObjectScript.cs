@@ -52,7 +52,7 @@ public class TerrainObjectScript: MonoBehaviour {
 
   private static void removePerchChildren(Transform obj) {
     foreach(Transform child in obj) {
-      if (child.tag == "lb_perchTarget") {
+      if (child.GetComponent<PerchScript>() != null) {
         Destroy(child.gameObject);
       }
     }
@@ -105,6 +105,10 @@ public class TerrainObjectScript: MonoBehaviour {
 
   public bool CanBePlanted() {
     return temporaryObject && holdableAngle() && collidingObjects.Count == 0;
+  }
+
+  public bool isPlanted() {
+    return transform.parent != null;
   }
 
   private bool holdableAngle() {
