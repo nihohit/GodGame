@@ -113,6 +113,7 @@ public class BirdControlScript: MonoBehaviour {
   IEnumerator updateTargets() {
     while(true) {
       birdPerchTargets = FindObjectsOfType<PerchScript>().ToList();
+      birdGroundTargets = GameObject.FindGameObjectsWithTag("lb_groundTarget").ToList();
 
       yield return new WaitForSeconds(0.5f);
     }
