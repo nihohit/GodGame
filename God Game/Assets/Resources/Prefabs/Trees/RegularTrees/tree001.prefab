@@ -38,9 +38,10 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4348361510042540}
+  - component: {fileID: 114673117924627378}
   m_Layer: 0
   m_Name: perch
-  m_TagString: lb_perchTarget
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -52,7 +53,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000013463897010}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 213.58435, y: 91.17259, z: 0}
+  m_LocalPosition: {x: 13.231567, y: 14.154204, z: -31.477135}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4348361510042540}
@@ -123,6 +124,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a18149c435a49604482e25c681029330, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &114673117924627378
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1667306379982472}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16f1030a3bf21fe498d0059669d4f6e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!136 &136375365956735200
