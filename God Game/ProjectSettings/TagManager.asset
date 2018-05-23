@@ -6,7 +6,7 @@ TagManager:
   tags:
   - testingObject
   - lb_groundTarget
-  - lb_perchTarget
+  - lb_bird
   layers:
   - Default
   - TransparentFX
