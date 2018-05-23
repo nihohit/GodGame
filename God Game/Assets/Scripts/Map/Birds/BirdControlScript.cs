@@ -85,21 +85,22 @@ public class BirdControlScript: MonoBehaviour {
     }
   }
 
-  public void AddBird(Transform perch) {
+  public void AddBird(PerchScript perch) {
     var bird = instantiateBird();
-    bird.transform.position = perch.position;
-    bird.transform.parent = perch;
+    bird.Perch = perch;
+    bird.transform.position = perch.transform.position;
+    bird.transform.parent = perch.transform;
   }
 
-  GameObject instantiateBird() {
+  BirdScript instantiateBird() {
     GameObject birdPrefab;
     if (highQuality) {
       birdPrefab = Resources.Load(myBirdTypes[Random.Range(0, myBirdTypes.Count)] + "HQ", typeof(GameObject)) as GameObject;
     } else {
       birdPrefab = Resources.Load(myBirdTypes[Random.Range(0, myBirdTypes.Count)], typeof(GameObject)) as GameObject;
     }
-    var newBird = Instantiate<GameObject>(birdPrefab);
-    newBird.GetComponent<BirdScript>().Controller = this;
+    var newBird = Instantiate<GameObject>(birdPrefab).GetComponent<BirdScript>();
+    newBird.Controller = this;
     newBird.transform.localScale = Vector3.one * birdScale;
     myBirds.Add(birdPrefab);
     return newBird;
@@ -110,9 +111,11 @@ public class BirdControlScript: MonoBehaviour {
   }
 
   IEnumerator updateTargets() {
-    birdPerchTargets = FindObjectsOfType<PerchScript>().ToList();
+    while(true) {
+      birdPerchTargets = FindObjectsOfType<PerchScript>().ToList();
 
-    yield return new WaitForSeconds(0.5f);
+      yield return new WaitForSeconds(0.5f);
+    }
   }
 
   Vector3 FindPointInGroundTarget(GameObject target) {
@@ -154,8 +157,8 @@ public class BirdControlScript: MonoBehaviour {
         target = birdGroundTargets[Mathf.FloorToInt(Random.Range(0, birdGroundTargets.Count))];
         StartCoroutine(bird.FlyToTarget(FindPointInGroundTarget(target)));
       } else {
-        target = birdPerchTargets[Mathf.FloorToInt(Random.Range(0, birdPerchTargets.Count))].gameObject;
-        StartCoroutine(bird.FlyToTarget(target.transform.position));
+        var perch = birdPerchTargets[Mathf.FloorToInt(Random.Range(0, birdPerchTargets.Count))];
+        StartCoroutine(bird.FlyToPerch(perch));
       }
     }
   }

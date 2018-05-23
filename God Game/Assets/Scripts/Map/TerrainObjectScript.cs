@@ -47,15 +47,6 @@ public class TerrainObjectScript: MonoBehaviour {
     Rigidbody rigidBody = obj.gameObject.AddComponent<Rigidbody>();
     rigidBody.mass = 5;
     rigidBody.useGravity = true;
-    removePerchChildren(obj);
-  }
-
-  private static void removePerchChildren(Transform obj) {
-    foreach(Transform child in obj) {
-      if (child.GetComponent<PerchScript>() != null) {
-        Destroy(child.gameObject);
-      }
-    }
   }
 
   private void OnTriggerEnter(Collider other) {

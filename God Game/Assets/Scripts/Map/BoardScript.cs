@@ -240,10 +240,10 @@ public class BoardScript: MonoBehaviour {
     if (!lastTouchedObject.isPlanted()) {
       return;
     }
-    Transform freePerch = null;
+    PerchScript freePerch = null;
     foreach (Transform child in lastTouchedObject.transform) {
       if (child.GetComponent<PerchScript>() != null && child.childCount == 0) {
-        freePerch = child;
+        freePerch = child.GetComponent<PerchScript>();
         break;
       }
     }

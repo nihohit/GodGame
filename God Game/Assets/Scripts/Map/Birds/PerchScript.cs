@@ -5,8 +5,8 @@ using UnityEngine;
 public class PerchScript : MonoBehaviour {
   private TerrainObjectScript parentObject;
 
-  private void OnStart() {
-    parentObject = transform.gameObject.GetComponent<TerrainObjectScript>();
+  private void Start() {
+    parentObject = transform.parent.GetComponent<TerrainObjectScript>();
   }
 
   public bool IsStable() {

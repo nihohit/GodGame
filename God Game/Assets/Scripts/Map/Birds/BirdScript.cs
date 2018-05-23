@@ -1,35 +1,35 @@
 using UnityEngine;
 using System.Collections;
 
-public class BirdScript : MonoBehaviour {
-	enum birdBehaviors{
-		sing,
-		preen,
-		ruffle,
-		peck,
-		hopForward,
-		hopBackward,
-		hopLeft,
-		hopRight,
-	}
+public class BirdScript: MonoBehaviour {
+  enum birdBehaviors {
+    sing,
+    preen,
+    ruffle,
+    peck,
+    hopForward,
+    hopBackward,
+    hopLeft,
+    hopRight,
+  }
 
-	public AudioClip song1;
-	public AudioClip song2;
-	public AudioClip flyAway1;
-	public AudioClip flyAway2;
+  public AudioClip song1;
+  public AudioClip song2;
+  public AudioClip flyAway1;
+  public AudioClip flyAway2;
 
-	public bool fleeCrows = true;
+  public bool fleeCrows = true;
 
-	Animator anim;
-	public BirdControlScript Controller { get; set; }
+  Animator anim;
+  public BirdControlScript Controller { get; set; }
 
-	bool paused = false;
-	bool idle = true;
-	bool flying = false;
-	bool landing = false;
-	bool perched = false;
-	bool onGround = true;
-	bool dead = false;
+  bool paused = false;
+  bool idle = true;
+  bool flying = false;
+  bool landing = false;
+  bool Perched { get { return Perch != null; } }
+	bool OnGround { get { return !Perched && !flying && !landing; } }
+  bool dead = false;
 	BoxCollider birdCollider;
 	Vector3 bColCenter;
 	Vector3 bColSize;
@@ -54,7 +54,7 @@ public class BirdScript : MonoBehaviour {
 	int flyAnimationHash;
 	int hopIntHash;
 	int flyingBoolHash;
-	//int perchedBoolHash;
+	//int PerchedBoolHash;
 	int peckBoolHash;
 	int ruffleBoolHash;
 	int preenBoolHash;
@@ -63,6 +63,8 @@ public class BirdScript : MonoBehaviour {
 	int singTriggerHash;
 	int flyingDirectionHash;
 	int dieTriggerHash;
+
+  public PerchScript Perch { get; set; }
 
 	void OnEnable () {
 		birdCollider = gameObject.GetComponent<BoxCollider>();
@@ -85,7 +87,7 @@ public class BirdScript : MonoBehaviour {
 		flyAnimationHash = Animator.StringToHash ("Base Layer.fly");
 		hopIntHash = Animator.StringToHash ("hop");
 		flyingBoolHash = Animator.StringToHash("flying");
-		//perchedBoolHash = Animator.StringToHash("perched");
+		//PerchedBoolHash = Animator.StringToHash("Perched");
 		peckBoolHash = Animator.StringToHash("peck");
 		ruffleBoolHash = Animator.StringToHash("ruffle");
 		preenBoolHash = Animator.StringToHash("preen");
@@ -119,8 +121,13 @@ public class BirdScript : MonoBehaviour {
 			paused = false;
 		}
 	}
-	
-	public IEnumerator FlyToTarget(Vector3 target){
+
+  public IEnumerator FlyToPerch(PerchScript perch) {
+    this.Perch = perch;
+    return FlyToTarget(perch.transform.position);
+  }
+
+  public IEnumerator FlyToTarget(Vector3 target){
 		if(Random.value < .5){
 			GetComponent<AudioSource>().PlayOneShot (flyAway1,.1f);
 		}else{
@@ -128,7 +135,6 @@ public class BirdScript : MonoBehaviour {
 		}
 		flying = true;
 		landing = false;
-		onGround = false;
 		GetComponent<Rigidbody>().isKinematic = false;
 		GetComponent<Rigidbody>().velocity = Vector3.zero;
 		GetComponent<Rigidbody>().drag = 0.5f;
@@ -339,7 +345,6 @@ public class BirdScript : MonoBehaviour {
 		transform.localEulerAngles = new Vector3(0.0f,transform.localEulerAngles.y,0.0f);
 		transform.position = target;
 		anim.applyRootMotion = true;
-		onGround = true;
 	}
 
 	//Sets a variable between -1 and 1 to control the left and right banking animation
@@ -358,7 +363,7 @@ public class BirdScript : MonoBehaviour {
 			//the bird is in the idle animation, lets randomly choose a behavior every 3 seconds
 			if (Random.value < Time.deltaTime*.33){
 				//bird will display a behavior
-				//in the perched state the bird can only sing, preen, or ruffle
+				//in the Perched state the bird can only sing, preen, or ruffle
 				float rand = Random.value;
 				if (rand < .3){
 					DisplayBehavior(birdBehaviors.sing);
@@ -366,15 +371,15 @@ public class BirdScript : MonoBehaviour {
 					DisplayBehavior(birdBehaviors.peck);
 				}else if (rand < .6){
 					DisplayBehavior(birdBehaviors.preen);	
-				}else if (!perched && rand<.7){
+				}else if (!Perched && rand<.7){
 					DisplayBehavior(birdBehaviors.ruffle);	
-				}else if (!perched && rand <.85){
+				}else if (!Perched && rand <.85){
 					DisplayBehavior(birdBehaviors.hopForward);	
-				}else if (!perched && rand < .9){
+				}else if (!Perched && rand < .9){
 					DisplayBehavior(birdBehaviors.hopLeft);	
-				}else if (!perched && rand <.95){
+				}else if (!Perched && rand <.95){
 					DisplayBehavior(birdBehaviors.hopRight);
-				}else if (!perched && rand <= 1){
+				}else if (!Perched && rand <= 1){
 					DisplayBehavior(birdBehaviors.hopBackward);	
 				}else{
 					DisplayBehavior(birdBehaviors.sing);	
@@ -427,7 +432,7 @@ public class BirdScript : MonoBehaviour {
 
 	void OnTriggerExit(Collider col){
 		//if bird has hopped out of the target area lets fly
-		if (onGround && (col.tag == "lb_groundTarget" || col.tag == "lb_perchTarget")){
+		if (OnGround && (col.tag == "lb_groundTarget" || col.tag == "lb_perchTarget")){
 			FlyAway ();
 		}
 	}
@@ -445,6 +450,7 @@ public class BirdScript : MonoBehaviour {
 	}
 	
 	void FlyAway(){
+    Perch = null;
     transform.parent = null;
 		if(!dead){
 			StopCoroutine("FlyToTarget");
@@ -476,11 +482,10 @@ public class BirdScript : MonoBehaviour {
 			anim.SetTrigger(dieTriggerHash);
 			anim.applyRootMotion = false;
 			dead = true;
-			onGround = false;
 			flying = false;
 			landing = false;
 			idle = false;
-			perched = false;
+			Perch = null;
 			AbortFlyToTarget();
 			StopAllCoroutines();
 			GetComponent<Collider>().isTrigger = false;
@@ -497,11 +502,10 @@ public class BirdScript : MonoBehaviour {
 			anim.SetTrigger(dieTriggerHash);
 			anim.applyRootMotion = false;
 			dead = true;
-			onGround = false;
 			flying = false;
 			landing = false;
 			idle = false;
-			perched = false;
+			Perch = null;
 			AbortFlyToTarget();
 			StopAllCoroutines();
 			GetComponent<Collider>().isTrigger = false;
@@ -519,12 +523,11 @@ public class BirdScript : MonoBehaviour {
 			birdCollider.size = bColSize;
 			GetComponent<Collider>().isTrigger = true;
 			dead = false;
-			onGround = false;
 			flying = false;
 			landing = false;
 			idle = true;
-			perched = false;
-			GetComponent<Rigidbody>().isKinematic = false;
+      Perch = null;
+      GetComponent<Rigidbody>().isKinematic = false;
 			GetComponent<Rigidbody>().useGravity = false;
 			anim.Play (idleAnimationHash);
 			Controller.BirdFindTarget(this);
@@ -553,8 +556,14 @@ public class BirdScript : MonoBehaviour {
 	}
 
 	void Update () {
-		if(onGround && !paused && !dead){
+    if (paused || dead) {
+      return;
+    }
+		if(OnGround){
 			OnGroundBehaviors();	
 		}
+    if (Perch != null && !Perch.IsStable()) {
+      FlyAway();
+    }
 	}
 }
