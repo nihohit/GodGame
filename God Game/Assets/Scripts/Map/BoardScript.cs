@@ -230,13 +230,13 @@ public class BoardScript: MonoBehaviour {
       lastTouchedObject.SetOriginalColors();
     }
 
-    var newObjecthit = this.CurrentMousePointedTree();
-    if (!newObjecthit.HasValue) {
+    var newObjectHit = this.CurrentMousePointedTree();
+    if (!newObjectHit.HasValue) {
       lastTouchedObject = null;
       return;
     }
 
-    lastTouchedObject = newObjecthit.Value.collider.gameObject.GetComponent<TerrainObjectScript>();
+    lastTouchedObject = newObjectHit.Value.collider.gameObject.GetComponent<TerrainObjectScript>();
     if (!lastTouchedObject.isPlanted()) {
       return;
     }

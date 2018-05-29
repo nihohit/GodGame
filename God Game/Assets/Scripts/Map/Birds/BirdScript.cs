@@ -28,8 +28,7 @@ public class BirdScript: MonoBehaviour {
   bool flying = false;
   bool landing = false;
   bool Perched { get { return Perch != null; } }
-	bool OnGround { get { return !Perched && !flying && !landing; } }
-  bool dead = false;
+  bool OnGround { get { return !Perched && !flying && !landing; } }
 	BoxCollider birdCollider;
 	Vector3 bColCenter;
 	Vector3 bColSize;
@@ -97,37 +96,32 @@ public class BirdScript: MonoBehaviour {
 		flyingDirectionHash = Animator.StringToHash("flyingDirectionX");
 		dieTriggerHash = Animator.StringToHash ("die");
 		anim.SetFloat ("IdleAgitated",agitationLevel);
-		if (dead){
-			Revive();
-		}
 	}
 
 	void PauseBird(){
-		if(!dead){
-			originalAnimSpeed = anim.speed;
-			anim.speed = 0;
-			if(!GetComponent<Rigidbody>().isKinematic){originalVelocity = GetComponent<Rigidbody>().velocity;}
-			GetComponent<Rigidbody>().isKinematic = true;
-			GetComponent<AudioSource>().Stop ();
-			paused = true;
-		}
+		originalAnimSpeed = anim.speed;
+		anim.speed = 0;
+		if(!GetComponent<Rigidbody>().isKinematic){originalVelocity = GetComponent<Rigidbody>().velocity;}
+		GetComponent<Rigidbody>().isKinematic = true;
+		GetComponent<AudioSource>().Stop ();
+		paused = true;
 	}
 
 	void UnPauseBird(){
-		if(!dead){
-			anim.speed = originalAnimSpeed;
-			GetComponent<Rigidbody>().isKinematic = false;
-			GetComponent<Rigidbody>().velocity = originalVelocity;
-			paused = false;
-		}
+		anim.speed = originalAnimSpeed;
+		GetComponent<Rigidbody>().isKinematic = false;
+		GetComponent<Rigidbody>().velocity = originalVelocity;
+		paused = false;
 	}
 
   public IEnumerator FlyToPerch(PerchScript perch) {
     this.Perch = perch;
+	Debug.Log(Perch);
     return FlyToTarget(perch.transform.position);
   }
 
   public IEnumerator FlyToTarget(Vector3 target){
+	  Debug.Log(target);
 		if(Random.value < .5){
 			GetComponent<AudioSource>().PlayOneShot (flyAway1,.1f);
 		}else{
@@ -189,13 +183,13 @@ public class BirdScript: MonoBehaviour {
 
 				if (Physics.Raycast(transform.position,-Vector3.up,out hit,0.15f*Controller.birdScale) && GetComponent<Rigidbody>().velocity.y < 0){
 					//if the bird is going to collide with the ground zero out vertical velocity
-					if(!hit.collider.isTrigger){
+					if(shouldAbortOnHit(hit.collider)) {
 						GetComponent<Rigidbody>().velocity = new Vector3(GetComponent<Rigidbody>().velocity.x, 0.0f,GetComponent<Rigidbody>().velocity.z);
 					}
 				}
 				if (Physics.Raycast(transform.position,Vector3.up,out hit,0.15f*Controller.birdScale) && GetComponent<Rigidbody>().velocity.y > 0){
 					//if the bird is going to collide with something overhead zero out vertical velocity
-					if(!hit.collider.isTrigger){
+					if(shouldAbortOnHit(hit.collider)) {
 						GetComponent<Rigidbody>().velocity = new Vector3(GetComponent<Rigidbody>().velocity.x, 0.0f,GetComponent<Rigidbody>().velocity.z);
 					}
 				}
@@ -204,7 +198,7 @@ public class BirdScript: MonoBehaviour {
 				forwardStraight.y = 0.0f;
 				//Debug.DrawRay (transform.position+(transform.forward*.1f),forwardStraight*.75f,Color.green);
 				if (Physics.Raycast (transform.position+(transform.forward*.15f*Controller.birdScale),forwardStraight,out hit,.75f*Controller.birdScale)){
-					if(!hit.collider.isTrigger){
+					if(shouldAbortOnHit(hit.collider)) {
 						AbortFlyToTarget();
 					}
 				}
@@ -231,13 +225,13 @@ public class BirdScript: MonoBehaviour {
 				GetComponent<Rigidbody>().AddForce(transform.forward * 70.0f*Controller.birdScale * Time.deltaTime);
 				if (Physics.Raycast(transform.position,-Vector3.up,out hit,0.15f*Controller.birdScale) && GetComponent<Rigidbody>().velocity.y < 0){
 					//if the bird is going to collide with the ground zero out vertical velocity
-					if(!hit.collider.isTrigger){
+					if(shouldAbortOnHit(hit.collider)) {
 						GetComponent<Rigidbody>().velocity = new Vector3(GetComponent<Rigidbody>().velocity.x, 0.0f,GetComponent<Rigidbody>().velocity.z);
 					}
 				}
 				if (Physics.Raycast(transform.position,Vector3.up,out hit,0.15f*Controller.birdScale) && GetComponent<Rigidbody>().velocity.y > 0){
 					//if the bird is going to collide with something overhead zero out vertical velocity
-					if(!hit.collider.isTrigger){
+					if(shouldAbortOnHit(hit.collider)) {
 						GetComponent<Rigidbody>().velocity = new Vector3(GetComponent<Rigidbody>().velocity.x, 0.0f,GetComponent<Rigidbody>().velocity.z);
 					}
 				}
@@ -247,7 +241,7 @@ public class BirdScript: MonoBehaviour {
 				forwardStraight.y = 0.0f;
 				//Debug.DrawRay (transform.position+(transform.forward*.1f),forwardStraight*.75f,Color.green);
 				if (Physics.Raycast (transform.position+(transform.forward*.15f*Controller.birdScale),forwardStraight,out hit,.75f*Controller.birdScale)){
-					if(!hit.collider.isTrigger){
+					if(shouldAbortOnHit(hit.collider)) {
 						AbortFlyToTarget();
 					}
 				}
@@ -265,7 +259,7 @@ public class BirdScript: MonoBehaviour {
 				}
 				if (Physics.Raycast(transform.position,Vector3.up,out hit,0.15f*Controller.birdScale) && GetComponent<Rigidbody>().velocity.y > 0){
 					//if the bird is going to collide with something overhead zero out vertical velocity
-					if(!hit.collider.isTrigger){
+					if(shouldAbortOnHit(hit.collider)) {
 						GetComponent<Rigidbody>().velocity = new Vector3(GetComponent<Rigidbody>().velocity.x, 0.0f,GetComponent<Rigidbody>().velocity.z);
 					}
 				}
@@ -275,7 +269,7 @@ public class BirdScript: MonoBehaviour {
 				forwardStraight.y = 0.0f;
 				//Debug.DrawRay (transform.position+(transform.forward*.1f),forwardStraight*.75f,Color.green);
 				if (Physics.Raycast (transform.position+(transform.forward*.15f*Controller.birdScale),forwardStraight,out hit,.75f*Controller.birdScale)){
-					if(!hit.collider.isTrigger){
+					if(shouldAbortOnHit(hit.collider)) {
 						AbortFlyToTarget();
 					}
 				}
@@ -354,8 +348,14 @@ public class BirdScript: MonoBehaviour {
 		return ang;
 	}
 	
+	bool shouldAbortOnHit(Collider col) {
+		return !col.isTrigger && 
+			!(col.gameObject == Perch || 
+			(Perch != null && col.gameObject == Perch.transform.parent.gameObject));
+	}
+
 	void OnGroundBehaviors(){
-		idle = anim.GetCurrentAnimatorStateInfo(0).fullPathHash == idleAnimationHash;
+	  	idle = anim.GetCurrentAnimatorStateInfo(0).fullPathHash == idleAnimationHash;
 		if(!GetComponent<Rigidbody>().isKinematic){
 			GetComponent<Rigidbody>().isKinematic = true;
 		}
@@ -450,88 +450,28 @@ public class BirdScript: MonoBehaviour {
 	}
 	
 	void FlyAway(){
-    Perch = null;
-    transform.parent = null;
-		if(!dead){
-			StopCoroutine("FlyToTarget");
-			anim.SetBool(landingBoolHash, false);
-			Controller.BirdFindTarget(this);
-		}
-	}
-
-	void Flee(){
-		if(!dead){
-			StopCoroutine("FlyToTarget");
-			GetComponent<AudioSource>().Stop();
-			anim.Play(flyAnimationHash);
-			Vector3 farAwayTarget = transform.position;
-			farAwayTarget += new Vector3(Random.Range (-100,100)*Controller.birdScale,10*Controller.birdScale,Random.Range (-100,100)*Controller.birdScale);
-			StartCoroutine("FlyToTarget",farAwayTarget);
-		}
+    	Perch = null;
+    	transform.parent = null;
+		StopCoroutine("FlyToTarget");
+		anim.SetBool(landingBoolHash, false);
+		Controller.BirdFindTarget(this);
 	}
 
 	void CrowIsClose(){
-		if (fleeCrows && !dead){
+		if (fleeCrows){
 			Flee ();
 		}
 	}
-
-	public void KillBird(){
-		if(!dead){
-			Controller.EmitFeather(transform.position);
-			anim.SetTrigger(dieTriggerHash);
-			anim.applyRootMotion = false;
-			dead = true;
-			flying = false;
-			landing = false;
-			idle = false;
-			Perch = null;
-			AbortFlyToTarget();
-			StopAllCoroutines();
-			GetComponent<Collider>().isTrigger = false;
-			birdCollider.center = new Vector3(0.0f,0.0f,0.0f);
-			birdCollider.size = new Vector3(0.1f,0.01f,0.1f)*Controller.birdScale;
-			GetComponent<Rigidbody>().isKinematic = false;
-			GetComponent<Rigidbody>().useGravity = true;
-		}
-	}
-
-	public void KillBirdWithForce(Vector3 force){
-		if(!dead){
-			Controller.EmitFeather(transform.position);
-			anim.SetTrigger(dieTriggerHash);
-			anim.applyRootMotion = false;
-			dead = true;
-			flying = false;
-			landing = false;
-			idle = false;
-			Perch = null;
-			AbortFlyToTarget();
-			StopAllCoroutines();
-			GetComponent<Collider>().isTrigger = false;
-			birdCollider.center = new Vector3(0.0f,0.0f,0.0f);
-			birdCollider.size = new Vector3(0.1f,0.01f,0.1f)*Controller.birdScale;
-			GetComponent<Rigidbody>().isKinematic = false;
-			GetComponent<Rigidbody>().useGravity = true;
-			GetComponent<Rigidbody>().AddForce (force);
-		}
-	}
-
-	void Revive(){
-		if(dead){
-			birdCollider.center = bColCenter;
-			birdCollider.size = bColSize;
-			GetComponent<Collider>().isTrigger = true;
-			dead = false;
-			flying = false;
-			landing = false;
-			idle = true;
-      Perch = null;
-      GetComponent<Rigidbody>().isKinematic = false;
-			GetComponent<Rigidbody>().useGravity = false;
-			anim.Play (idleAnimationHash);
-			Controller.BirdFindTarget(this);
-		}
+		
+	void Flee(){
+		Perch = null;
+    	transform.parent = null;
+		StopCoroutine("FlyToTarget");
+		GetComponent<AudioSource>().Stop();
+		anim.Play(flyAnimationHash);
+		Vector3 farAwayTarget = transform.position;
+		farAwayTarget += new Vector3(Random.Range (-100,100)*Controller.birdScale,10*Controller.birdScale,Random.Range (-100,100)*Controller.birdScale);
+		StartCoroutine("FlyToTarget",farAwayTarget);
 	}
 
 	void ResetHopInt(){
@@ -539,31 +479,27 @@ public class BirdScript: MonoBehaviour {
 	}
 
 	void ResetFlyingLandingVariables(){
-		if (flying || landing){
-			flying = false;
-			landing = false;
-		}
+		flying = false;
+		landing = false;
 	}
 
 	void PlaySong(){
-		if (!dead){
-			if(Random.value < .5){
-				GetComponent<AudioSource>().PlayOneShot (song1,1);
-			}else{
-				GetComponent<AudioSource>().PlayOneShot (song2,1);
-			}
+		if(Random.value < .5){
+			GetComponent<AudioSource>().PlayOneShot (song1,1);
+		}else{
+			GetComponent<AudioSource>().PlayOneShot (song2,1);
 		}
 	}
 
 	void Update () {
-    if (paused || dead) {
-      return;
-    }
+		if (paused) {
+		return;
+		}
 		if(OnGround){
 			OnGroundBehaviors();	
 		}
-    if (Perch != null && !Perch.IsStable()) {
-      FlyAway();
-    }
+		if (Perch != null && !Perch.IsStable()) {
+			FlyAway();
+		}
 	}
 }

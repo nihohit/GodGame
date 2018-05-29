@@ -146,19 +146,14 @@ public class BirdControlScript: MonoBehaviour {
     //yield return new WaitForSeconds(1);
     GameObject target;
     if (birdGroundTargets.Count > 0 || birdPerchTargets.Count > 0) {
-      //pick a random target based on the number of available targets vs the area of ground targets
-      //each perch target counts for .3 area, each ground target's area is calculated
-      float gtArea = 0.0f;
-      float ptArea = birdPerchTargets.Count * 0.3f;
-
-      for (int i = 0; i < birdGroundTargets.Count; i++) {
-        gtArea += birdGroundTargets[i].GetComponent<Collider>().bounds.size.x * birdGroundTargets[i].GetComponent<Collider>().bounds.size.z;
-      }
-      if (ptArea == 0.0f || Random.value < gtArea / (gtArea + ptArea)) {
+      var totalCount = birdGroundTargets.Count + birdPerchTargets.Count;
+      if (Random.value * totalCount > birdGroundTargets.Count) {
         target = birdGroundTargets[Mathf.FloorToInt(Random.Range(0, birdGroundTargets.Count))];
+        Debug.Log(target);
         StartCoroutine(bird.FlyToTarget(FindPointInGroundTarget(target)));
       } else {
         var perch = birdPerchTargets[Mathf.FloorToInt(Random.Range(0, birdPerchTargets.Count))];
+        Debug.Log(perch);
         StartCoroutine(bird.FlyToPerch(perch));
       }
     }

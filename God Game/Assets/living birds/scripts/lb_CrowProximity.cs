@@ -8,5 +8,4 @@ public class lb_CrowProximity : MonoBehaviour {
 			col.SendMessage("CrowIsClose");
 		}
 	}
-
 }
