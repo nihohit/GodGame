@@ -119,21 +119,6 @@ public class BirdControlScript: MonoBehaviour {
     }
   }
 
-  Vector3 FindPointInGroundTarget(GameObject target) {
-    //find a random point within the collider of a ground target that touches the ground
-    Vector3 point;
-    point.x = Random.Range(target.GetComponent<Collider>().bounds.max.x, target.GetComponent<Collider>().bounds.min.x);
-    point.y = target.GetComponent<Collider>().bounds.max.y;
-    point.z = Random.Range(target.GetComponent<Collider>().bounds.max.z, target.GetComponent<Collider>().bounds.min.z);
-    //raycast down until it hits the ground
-    RaycastHit hit;
-    if (Physics.Raycast(point, -Vector3.up, out hit, target.GetComponent<Collider>().bounds.size.y, groundLayer)) {
-      return hit.point;
-    }
-
-    return point;
-  }
-
   bool AreThereActiveTargets() {
     if (birdGroundTargets.Count > 0 || birdPerchTargets.Count > 0) {
       return true;
@@ -149,11 +134,9 @@ public class BirdControlScript: MonoBehaviour {
       var totalCount = birdGroundTargets.Count + birdPerchTargets.Count;
       if (Random.value * totalCount > birdGroundTargets.Count) {
         target = birdGroundTargets[Mathf.FloorToInt(Random.Range(0, birdGroundTargets.Count))];
-        Debug.Log(target);
-        StartCoroutine(bird.FlyToTarget(FindPointInGroundTarget(target)));
+        StartCoroutine(bird.FlyToGround(target));
       } else {
         var perch = birdPerchTargets[Mathf.FloorToInt(Random.Range(0, birdPerchTargets.Count))];
-        Debug.Log(perch);
         StartCoroutine(bird.FlyToPerch(perch));
       }
     }

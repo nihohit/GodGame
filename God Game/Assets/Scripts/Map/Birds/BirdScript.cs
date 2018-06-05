@@ -65,7 +65,9 @@ public class BirdScript: MonoBehaviour {
 
   public PerchScript Perch { get; set; }
 
-	void OnEnable () {
+  public GameObject Ground { get; set; }
+
+  void OnEnable () {
 		birdCollider = gameObject.GetComponent<BoxCollider>();
 		bColCenter = birdCollider.center;
 		bColSize = birdCollider.size;
@@ -114,14 +116,37 @@ public class BirdScript: MonoBehaviour {
 		paused = false;
 	}
 
+  public IEnumerator FlyToGround(GameObject ground) {
+    this.Perch = null;
+    this.Ground = ground;
+    return FlyToTarget(FindPointInGroundTarget(ground));
+  }
+
+  
+  Vector3 FindPointInGroundTarget(GameObject target) {
+    //find a random point within the collider of a ground target that touches the ground
+    Vector3 point;
+    point.x = Random.Range(target.GetComponent<Collider>().bounds.max.x, target.GetComponent<Collider>().bounds.min.x);
+    point.y = target.GetComponent<Collider>().bounds.max.y;
+    point.z = Random.Range(target.GetComponent<Collider>().bounds.max.z, target.GetComponent<Collider>().bounds.min.z);
+    //raycast down until it hits the ground
+    RaycastHit hit;
+    // TODO - keep raycasting until you find a clear spot
+    if (Physics.Raycast(point, -Vector3.up, out hit, target.GetComponent<Collider>().bounds.size.y)) {
+      return hit.point;
+    }
+
+    return point;
+  }
+
   public IEnumerator FlyToPerch(PerchScript perch) {
+    this.Ground = null;
     this.Perch = perch;
-	Debug.Log(Perch);
     return FlyToTarget(perch.transform.position);
   }
 
   public IEnumerator FlyToTarget(Vector3 target){
-	  Debug.Log(target);
+	  
 		if(Random.value < .5){
 			GetComponent<AudioSource>().PlayOneShot (flyAway1,.1f);
 		}else{
@@ -349,10 +374,22 @@ public class BirdScript: MonoBehaviour {
 	}
 	
 	bool shouldAbortOnHit(Collider col) {
-		return !col.isTrigger && 
-			!(col.gameObject == Perch || 
-			(Perch != null && col.gameObject == Perch.transform.parent.gameObject));
-	}
+    bool result;
+    if (Perch != null) {
+      result = !col.isTrigger &&
+        col.gameObject != Perch &&
+        col.gameObject != Perch.transform.parent.gameObject;
+      if (result) {
+        Debug.Log(string.Format("Was aiming towards {0} in {1}, hit {2}", Perch.name, Perch.transform.parent.name, col.gameObject.name));
+      }
+      return result;
+    }
+    result = !col.isTrigger && !col.gameObject == Ground;
+    if (result) {
+      Debug.Log(string.Format("Was aiming towards {0}, hit {1}", Ground.name, col.gameObject.name));
+    }
+    return result;
+  }
 
 	void OnGroundBehaviors(){
 	  	idle = anim.GetCurrentAnimatorStateInfo(0).fullPathHash == idleAnimationHash;
@@ -450,8 +487,9 @@ public class BirdScript: MonoBehaviour {
 	}
 	
 	void FlyAway(){
-    	Perch = null;
-    	transform.parent = null;
+    Perch = null;
+    Ground = null;
+    transform.parent = null;
 		StopCoroutine("FlyToTarget");
 		anim.SetBool(landingBoolHash, false);
 		Controller.BirdFindTarget(this);
@@ -465,7 +503,8 @@ public class BirdScript: MonoBehaviour {
 		
 	void Flee(){
 		Perch = null;
-    	transform.parent = null;
+    Ground = null;
+    transform.parent = null;
 		StopCoroutine("FlyToTarget");
 		GetComponent<AudioSource>().Stop();
 		anim.Play(flyAnimationHash);
