@@ -13,6 +13,10 @@ public class BirdScript: MonoBehaviour {
     hopRight,
   }
 
+  private enum birdState {
+	  flying, idle, landing, landed, 
+  }
+
   public AudioClip song1;
   public AudioClip song2;
   public AudioClip flyAway1;
@@ -24,15 +28,9 @@ public class BirdScript: MonoBehaviour {
   public BirdControlScript Controller { get; set; }
 
   bool paused = false;
-  bool idle = true;
-  bool flying = false;
-  bool landing = false;
-  bool Perched { get { return Perch != null; } }
-  bool OnGround { get { return !Perched && !flying && !landing; } }
-	BoxCollider birdCollider;
-	Vector3 bColCenter;
-	Vector3 bColSize;
-	SphereCollider solidCollider;
+  bool Perched { get { return Perch != null && state == birdState.landed; } }
+  bool OnGround { get { return Ground != null && state == birdState.landed; } }
+ birdState state;
 	float distanceToTarget = 0.0f;
 	float agitationLevel = .5f;
 	float originalAnimSpeed = 1.0f;
@@ -40,64 +38,35 @@ public class BirdScript: MonoBehaviour {
 
 	//hash variables for the animation states and animation properties
 	int idleAnimationHash;
-	int singAnimationHash;
-	int ruffleAnimationHash;
-	int preenAnimationHash;
-	int peckAnimationHash;
-	int hopForwardAnimationHash;
-	int hopBackwardAnimationHash;
-	int hopLeftAnimationHash;
-	int hopRightAnimationHash;
-	int worriedAnimationHash;
-	int landingAnimationHash;
 	int flyAnimationHash;
 	int hopIntHash;
 	int flyingBoolHash;
-	//int PerchedBoolHash;
 	int peckBoolHash;
 	int ruffleBoolHash;
 	int preenBoolHash;
-	//int worriedBoolHash;
 	int landingBoolHash;
 	int singTriggerHash;
 	int flyingDirectionHash;
-	int dieTriggerHash;
 
   public PerchScript Perch { get; set; }
 
   public GameObject Ground { get; set; }
 
   void OnEnable () {
-		birdCollider = gameObject.GetComponent<BoxCollider>();
-		bColCenter = birdCollider.center;
-		bColSize = birdCollider.size;
-		solidCollider = gameObject.GetComponent<SphereCollider>();
 		anim = gameObject.GetComponent<Animator>();
 
 		idleAnimationHash = Animator.StringToHash("Base Layer.Idle");
-		//singAnimationHash = Animator.StringToHash ("Base Layer.sing");
-		//ruffleAnimationHash = Animator.StringToHash ("Base Layer.ruffle");
-		//preenAnimationHash = Animator.StringToHash ("Base Layer.preen");
-		//peckAnimationHash = Animator.StringToHash ("Base Layer.peck");
-		//hopForwardAnimationHash = Animator.StringToHash ("Base Layer.hopForward");
-		//hopBackwardAnimationHash = Animator.StringToHash ("Base Layer.hopBack");
-		//hopLeftAnimationHash = Animator.StringToHash ("Base Layer.hopLeft");
-		//hopRightAnimationHash = Animator.StringToHash ("Base Layer.hopRight");
-		//worriedAnimationHash = Animator.StringToHash ("Base Layer.worried");
-		//landingAnimationHash = Animator.StringToHash ("Base Layer.landing");
 		flyAnimationHash = Animator.StringToHash ("Base Layer.fly");
 		hopIntHash = Animator.StringToHash ("hop");
 		flyingBoolHash = Animator.StringToHash("flying");
-		//PerchedBoolHash = Animator.StringToHash("Perched");
 		peckBoolHash = Animator.StringToHash("peck");
 		ruffleBoolHash = Animator.StringToHash("ruffle");
 		preenBoolHash = Animator.StringToHash("preen");
-		//worriedBoolHash = Animator.StringToHash("worried");
 		landingBoolHash = Animator.StringToHash("landing");
 		singTriggerHash = Animator.StringToHash ("sing");
 		flyingDirectionHash = Animator.StringToHash("flyingDirectionX");
-		dieTriggerHash = Animator.StringToHash ("die");
 		anim.SetFloat ("IdleAgitated",agitationLevel);
+		state = birdState.idle;
 	}
 
 	void PauseBird(){
@@ -146,14 +115,12 @@ public class BirdScript: MonoBehaviour {
   }
 
   public IEnumerator FlyToTarget(Vector3 target){
-	  
 		if(Random.value < .5){
 			GetComponent<AudioSource>().PlayOneShot (flyAway1,.1f);
 		}else{
 			GetComponent<AudioSource>().PlayOneShot (flyAway2,.1f);
 		}
-		flying = true;
-		landing = false;
+		state = birdState.flying;
 		GetComponent<Rigidbody>().isKinematic = false;
 		GetComponent<Rigidbody>().velocity = Vector3.zero;
 		GetComponent<Rigidbody>().drag = 0.5f;
@@ -172,9 +139,6 @@ public class BirdScript: MonoBehaviour {
 		while (t<1.0f){
 			if(!paused){
 				t+= Time.deltaTime;
-				if(t>.2f && !solidCollider.enabled){
-					solidCollider.enabled = true;
-				}
 			}
 			yield return 0;
 		}
@@ -306,7 +270,6 @@ public class BirdScript: MonoBehaviour {
 				GetComponent<Rigidbody>().AddForce(transform.forward * flyingForce * Time.deltaTime);
 				distanceToTarget = Vector3.Distance (transform.position,target);
 				if(distanceToTarget <= 1.5f*Controller.birdScale){
-					solidCollider.enabled = false;
 					if(distanceToTarget < 0.5f*Controller.birdScale){
 						break;	
 					}else{
@@ -324,9 +287,7 @@ public class BirdScript: MonoBehaviour {
 		anim.SetFloat (flyingDirectionHash,0);
 		//initiate the landing for the bird to finally reach the target
 		Vector3 vel = Vector3.zero;
-		flying = false;
-		landing = true;
-		solidCollider.enabled = false;
+		state = birdState.landing;
 		anim.SetBool(landingBoolHash, true);
 		anim.SetBool (flyingBoolHash,false);
 		t = 0.0f;
@@ -360,7 +321,7 @@ public class BirdScript: MonoBehaviour {
 		GetComponent<Rigidbody>().drag = .5f;
 		GetComponent<Rigidbody>().velocity = Vector3.zero;
 		anim.SetBool(landingBoolHash, false);
-		landing = false;
+		state = birdState.landed;
 		transform.localEulerAngles = new Vector3(0.0f,transform.localEulerAngles.y,0.0f);
 		transform.position = target;
 		anim.applyRootMotion = true;
@@ -374,29 +335,29 @@ public class BirdScript: MonoBehaviour {
 	}
 	
 	bool shouldAbortOnHit(Collider col) {
-    bool result;
-    if (Perch != null) {
-      result = !col.isTrigger &&
-        col.gameObject != Perch &&
-        col.gameObject != Perch.transform.parent.gameObject;
-      if (result) {
-        Debug.Log(string.Format("Was aiming towards {0} in {1}, hit {2}", Perch.name, Perch.transform.parent.name, col.gameObject.name));
-      }
-      return result;
-    }
-    result = !col.isTrigger && !col.gameObject == Ground;
-    if (result) {
-      Debug.Log(string.Format("Was aiming towards {0}, hit {1}", Ground.name, col.gameObject.name));
-    }
-    return result;
-  }
-
-	void OnGroundBehaviors(){
-	  	idle = anim.GetCurrentAnimatorStateInfo(0).fullPathHash == idleAnimationHash;
-		if(!GetComponent<Rigidbody>().isKinematic){
-			GetComponent<Rigidbody>().isKinematic = true;
+		if (col.isTrigger) {
+			return false;
 		}
-		if(idle){
+		Debug.Log(string.Format("Hit {0}", col.gameObject.name));
+		bool result = true;
+		if (Perch != null) {
+			result = col.gameObject != Perch.gameObject &&
+				col.gameObject != Perch.transform.parent.gameObject;
+			Debug.Log(string.Format("Was aiming towards {0} in {1}, hit {2}, should abort: {3}", 
+				Perch.name, Perch.transform.parent.name, col.gameObject.name, result));
+			return result;
+		} else if (Ground != null) {
+			result = col.gameObject != Ground.gameObject;
+			Debug.Log(string.Format("Was aiming towards {0}, hit {1}, should abort: {2}", 
+				Ground.name, col.gameObject.name, result));
+		}
+
+		return result;
+	}
+
+	void OnGroundBehaviors() {
+		GetComponent<Rigidbody>().isKinematic = true;
+		if(anim.GetCurrentAnimatorStateInfo(0).fullPathHash == idleAnimationHash){
 			//the bird is in the idle animation, lets randomly choose a behavior every 3 seconds
 			if (Random.value < Time.deltaTime*.33){
 				//bird will display a behavior
@@ -432,7 +393,7 @@ public class BirdScript: MonoBehaviour {
 	}
 	
 	void DisplayBehavior(birdBehaviors behavior){
-		idle = false;
+		state = birdState.landed;
 		switch (behavior){
 		case birdBehaviors.sing:
 			anim.SetTrigger(singTriggerHash);			
@@ -476,7 +437,6 @@ public class BirdScript: MonoBehaviour {
 
 	void AbortFlyToTarget(){
 		StopCoroutine("FlyToTarget");
-		solidCollider.enabled = false;
 		anim.SetBool(landingBoolHash, false);
 		anim.SetFloat (flyingDirectionHash,0);
 		transform.localEulerAngles = new Vector3(
@@ -503,8 +463,8 @@ public class BirdScript: MonoBehaviour {
 		
 	void Flee(){
 		Perch = null;
-    Ground = null;
-    transform.parent = null;
+    	Ground = null;
+    	transform.parent = null;
 		StopCoroutine("FlyToTarget");
 		GetComponent<AudioSource>().Stop();
 		anim.Play(flyAnimationHash);
@@ -515,11 +475,6 @@ public class BirdScript: MonoBehaviour {
 
 	void ResetHopInt(){
 		anim.SetInteger (hopIntHash, 0);
-	}
-
-	void ResetFlyingLandingVariables(){
-		flying = false;
-		landing = false;
 	}
 
 	void PlaySong(){

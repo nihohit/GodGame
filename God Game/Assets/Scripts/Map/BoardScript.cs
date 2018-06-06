@@ -19,6 +19,7 @@ public class BoardScript: MonoBehaviour {
   private GameObject[] treePrefabs;
   private bool ignoreContentAddition;
   private TerrainObjectScript lastTouchedObject;
+  private int treeCount = 0;
 
   #region initialization
 
@@ -308,6 +309,8 @@ public class BoardScript: MonoBehaviour {
   }
 
   private TerrainObjectScript instantiateTree(Vector3 position) {
-    return this.InstantiateObject(treePrefabs[0], position).GetComponent<TerrainObjectScript>();
+    var tree = this.InstantiateObject(treePrefabs[0], position).GetComponent<TerrainObjectScript>();
+    tree.gameObject.name += " num: " + treeCount++;
+    return tree;
   }
 }
