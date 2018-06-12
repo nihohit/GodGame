@@ -20,7 +20,7 @@ public class BirdControlScript: MonoBehaviour {
   public bool crow = true;
 
   bool pause = false;
-  List<GameObject> myBirds = new List<GameObject>();
+  List<BirdScript> myBirds = new List<BirdScript>();
   List<string> myBirdTypes = new List<string>();
   List<GameObject> birdGroundTargets = new List<GameObject>();
   List<PerchScript> birdPerchTargets = new List<PerchScript>();
@@ -37,7 +37,7 @@ public class BirdControlScript: MonoBehaviour {
   public void AllPause() {
     pause = true;
     for (int i = 0; i < myBirds.Count; i++) {
-      if (myBirds[i].activeSelf) {
+      if (myBirds[i].gameObject.activeSelf) {
         myBirds[i].SendMessage("PauseBird");
       }
     }
@@ -46,7 +46,7 @@ public class BirdControlScript: MonoBehaviour {
   public void AllUnPause() {
     pause = false;
     for (int i = 0; i < myBirds.Count; i++) {
-      if (myBirds[i].activeSelf) {
+      if (myBirds[i].gameObject.activeSelf) {
         myBirds[i].SendMessage("UnPauseBird");
       }
     }
@@ -83,6 +83,16 @@ public class BirdControlScript: MonoBehaviour {
       featherEmitters[i].transform.parent = transform;
       featherEmitters[i].SetActive(false);
     }
+
+    for (int i = 0; i < 30; i++) {
+      var bird = instantiateBird();
+      bird.GetComponent<BirdScript>().enabled = false;
+      bird.transform.position = new Vector3(Random.Range(-50, 50), Random.Range(20, 30), Random.Range(-50, 50));
+    }
+  }
+
+  private void Update() {
+     BoidFlock.MoveBoids(myBirds, Time.deltaTime * 3);
   }
 
   public void AddBird(PerchScript perch) {
@@ -102,12 +112,12 @@ public class BirdControlScript: MonoBehaviour {
     var newBird = Instantiate<GameObject>(birdPrefab).GetComponent<BirdScript>();
     newBird.Controller = this;
     newBird.transform.localScale = Vector3.one * birdScale;
-    myBirds.Add(birdPrefab);
+    myBirds.Add(newBird.GetComponent<BirdScript>());
     return newBird;
   }
 
   void OnEnable() {
-    StartCoroutine(updateTargets());
+    //StartCoroutine(updateTargets());
   }
 
   IEnumerator updateTargets() {

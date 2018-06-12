@@ -462,15 +462,16 @@ public class BirdScript: MonoBehaviour {
 	}
 		
 	void Flee(){
-		Perch = null;
-    	Ground = null;
-    	transform.parent = null;
-		StopCoroutine("FlyToTarget");
-		GetComponent<AudioSource>().Stop();
-		anim.Play(flyAnimationHash);
-		Vector3 farAwayTarget = transform.position;
-		farAwayTarget += new Vector3(Random.Range (-100,100)*Controller.birdScale,10*Controller.birdScale,Random.Range (-100,100)*Controller.birdScale);
-		StartCoroutine("FlyToTarget",farAwayTarget);
+
+		// Perch = null;
+    	// Ground = null;
+    	// transform.parent = null;
+		// StopCoroutine("FlyToTarget");
+		// GetComponent<AudioSource>().Stop();
+		// anim.Play(flyAnimationHash);
+		// Vector3 farAwayTarget = transform.position;
+		// farAwayTarget += new Vector3(Random.Range (-100,100)*Controller.birdScale,10*Controller.birdScale,Random.Range (-100,100)*Controller.birdScale);
+		// StartCoroutine("FlyToTarget",farAwayTarget);
 	}
 
 	void ResetHopInt(){
