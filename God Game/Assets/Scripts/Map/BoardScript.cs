@@ -4,15 +4,25 @@ using UnityEngine;
 using System.Linq;
 using Assets.Scripts.Base;
 using System;
+using UnityEngine.UI;
 
 public class BoardScript: MonoBehaviour {
   public int heightChangeRate = 20;
   public int x, z;
   public bool flatten, changeHeight;
+  public Slider slider;
+  public GameObject sphere;
 
   private TileScript[,] tileScripts;
   private GameObject[,] tiles;
-  private InteractionMode interactionMode;
+  private InteractionMode internalInteractionMode;
+  private InteractionMode interactionMode {
+    get { return internalInteractionMode; }
+    set {
+      internalInteractionMode = value;
+      sphere.SetActive(value == InteractionMode.LowerRaiseTile);
+    }
+  }
   private TerrainObjectScript currentTree;
   private Vector3 currentTreeEulerRotation;
   private GameObject[] treePrefabs;
@@ -164,17 +174,19 @@ public class BoardScript: MonoBehaviour {
   }
 
   private void handleTileInteraction() {
+    var hit = currentMousePointedLocation();
+    if (!hit.HasValue) {
+      return;
+    }
+    sphere.transform.position = hit.Value.point;
+    sphere.transform.localScale = Vector3.one * slider.value;
+
     TileUpdateDirection direction;
     if (Input.GetMouseButton(0)) {
       direction = TileUpdateDirection.Up;
     } else if (Input.GetMouseButton(1)) {
       direction = TileUpdateDirection.Down;
     } else {
-      return;
-    }
-
-    var hit = currentMousePointedLocation();
-    if (!hit.HasValue) {
       return;
     }
 
