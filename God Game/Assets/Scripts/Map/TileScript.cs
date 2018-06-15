@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class TileScript : MonoBehaviour {
+public class TileScript: MonoBehaviour {
   private const int kExpectedNumberOfVertices = 5;
 
   public IEnumerable<TileScript> directNeighbours { get; set; }
@@ -17,8 +17,6 @@ public class TileScript : MonoBehaviour {
       return directNeighbours.Concat(indirectNeighbours).Concat(new[] { this });
     }
   }
-
-  public BoardScript board { get; set; }
 
   private MeshFilter meshFilter;
   private MeshCollider meshCollider;
@@ -78,6 +76,12 @@ public class TileScript : MonoBehaviour {
       2, 3, 4
      };
     internalMesh = mesh;
+  }
+
+  static public IEnumerable<Vector3> transformedVectorsWithDistance(List<Vector3> vertices, Vector3 source, Func<Vector3, float, Vector3> vectorAndDistanceToVector) {
+    return vertices.Select(vertex => {
+      return vectorAndDistanceToVector(vertex, Vector3.Distance(vertex, source));
+    });
   }
 
   static public IEnumerable<Vector3> changeAllVerticesHeight(List<Vector3> vertices,

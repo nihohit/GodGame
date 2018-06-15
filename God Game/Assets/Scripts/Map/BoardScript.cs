@@ -44,7 +44,6 @@ public class BoardScript: MonoBehaviour {
         var tile = instantiateObject(prefab, Vector3.Scale(prefab.GetComponent<Renderer>().bounds.size, new Vector3(i, 0, j)));
         tiles[i + x, j + z] = tile;
         tileScripts[i + x, j + z] = tile.GetComponent<TileScript>();
-        tileScripts[i + x, j + z].board = this;
         tile.name = string.Format("Tile {0}, {1}", i + x, j + z);
         tile.transform.parent = transform;
 
@@ -190,8 +189,24 @@ public class BoardScript: MonoBehaviour {
       return;
     }
 
-    TileScript tileToUpdate = hit.Value.collider.GetComponent<TileScript>();
-    updateTile(tileToUpdate, direction);
+    if (InteractionMode.FlattenTile == interactionMode) {
+      TileScript tileToUpdate = hit.Value.collider.GetComponent<TileScript>();
+      updateTile(tileToUpdate, direction);
+    } else if (InteractionMode.LowerRaiseTile == interactionMode) {
+      var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
+      var computedValue = slider.value / 2;
+      var colliders = Physics.OverlapSphere(hit.Value.point, computedValue, 1 << 8);
+      foreach (var tile in colliders.Select(collider => collider.GetComponent<TileScript>())) {
+        tile.vertices = TileScript.transformedVectorsWithDistance(tile.vertices, 
+          hit.Value.point - tile.transform.position, (vertex, distance) => {
+          if (distance >= computedValue) {
+            return vertex;
+          }
+          return vertex + (actionDirection * (computedValue - distance) * Time.deltaTime);
+        }).ToList();
+        TileScript.adjustChildrenLocation(tile);
+      }
+    }
   }
 
   private System.Nullable<RaycastHit> currentMousePointedLocation() {
