@@ -162,6 +162,8 @@ public class TileScript : MonoBehaviour {
     }
 
     child.transform.localPosition = new Vector3(positionWithoutHeight.x, newHeight / sumOfDistances, positionWithoutHeight.z);
-    child.rotation = Quaternion.FromToRotation(Vector3.up, newNormal / sumOfDistances);
+    var groundNormal = newNormal / sumOfDistances;
+    Vector3 forwardsVector = -Vector3.Cross(groundNormal, child.right);
+    child.localRotation = Quaternion.LookRotation(forwardsVector, groundNormal);
   }
 }
