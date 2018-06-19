@@ -187,8 +187,11 @@ public class BoardScript: MonoBehaviour {
     } else if (InteractionMode.LowerRaiseTile == interactionMode) {
       var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
       var computedValue = slider.value / 2;
-      var colliders = Physics.OverlapSphere(hit.Value.point, computedValue, 1 << 8);
-      foreach (var tile in colliders.Select(collider => collider.GetComponent<TileScript>())) {
+      var lookingRange = computedValue + Constants.SizeOfTile;
+      foreach (var tile in tileScripts) {
+        if (tile.transform.position.DistanceIn2D(hit.Value.point) > lookingRange) {
+          continue;
+        }
         tile.vertices = TileScript.transformedVectorsWithDistance(tile.vertices, 
           hit.Value.point - tile.transform.position, (vertex, distance) => {
           if (distance >= computedValue) {

@@ -80,7 +80,7 @@ public class TileScript: MonoBehaviour {
 
   static public IEnumerable<Vector3> transformedVectorsWithDistance(List<Vector3> vertices, Vector3 source, Func<Vector3, float, Vector3> vectorAndDistanceToVector) {
     return vertices.Select(vertex => {
-      return vectorAndDistanceToVector(vertex, Vector3.Distance(vertex, source));
+      return vectorAndDistanceToVector(vertex, vertex.DistanceIn2D(source));
     });
   }
 
