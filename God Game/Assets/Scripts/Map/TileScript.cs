@@ -4,6 +4,32 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Unity.Entities;
+using Unity.Collections;
+
+public struct Tile {
+	private const int kExpectedNumberOfVertices = 5;
+
+	public MeshFilter meshFilter;
+	public MeshCollider meshCollider;
+	public NativeArray<Vector3> vertices;
+	public NativeArray<Tile> neighbours;
+
+	private void updateMesh(Mesh newMesh) {
+		newMesh.RecalculateNormals();
+		meshFilter.mesh = newMesh;
+		meshCollider.sharedMesh = newMesh;
+	}
+
+	private void updateVertices(NativeArray<Vector3> newVertices) {
+		var oldVertices = vertices;
+		Assert.AreEqual(newVertices.Length, kExpectedNumberOfVertices);
+		var internalMesh = meshFilter.mesh;
+		internalMesh.vertices = newVertices.ToArray();
+		updateMesh(internalMesh);
+		oldVertices.Dispose();
+	}
+}
 
 public class TileScript: MonoBehaviour {
   private const int kExpectedNumberOfVertices = 5;
@@ -21,7 +47,7 @@ public class TileScript: MonoBehaviour {
   private MeshFilter meshFilter;
   private MeshCollider meshCollider;
 
-  public Mesh internalMesh {
+  private Mesh internalMesh {
     get {
       return meshFilter.mesh;
     }
