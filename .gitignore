@@ -53,3 +53,5 @@ God Game/\.vscode/
 /Exectuable/
 /Executable/
 /God Game/.vs/
+/God Game/Logs/IncrementalCompiler
+/God/unity_incremental_compiler_server.log
