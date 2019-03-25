@@ -7,6 +7,7 @@ using System;
 using UnityEngine.UI;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 public class BoardScript: MonoBehaviour {
   public int heightChangeRate = 20;
@@ -203,7 +204,7 @@ public class BoardScript: MonoBehaviour {
 						continue;
 					}
 
-					var array = new NativeArray<Vector3>(tile.vertices.ToArray(), Allocator.Persistent);
+					var array = new NativeArray<float3>(tile.vertices.Select(toSlim).ToArray(), Allocator.Persistent);
 					var job = new ComputeVertices {
 						HitPoint = hitPoint - tile.transform.position,
 						computedValue = computedValue,
@@ -222,7 +223,7 @@ public class BoardScript: MonoBehaviour {
 			JobHandle.CompleteAll(nativeHandles);
 			foreach (var job in jobs) {
 				var tile = tileScripts[job.xCoord, job.yCoord];
-				tile.vertices = job.vertices.ToList();
+				tile.vertices = job.vertices.Select(toVector).ToList();
 				job.vertices.Dispose();
 				TileScript.adjustChildrenLocation(tile);
 			}
@@ -231,11 +232,19 @@ public class BoardScript: MonoBehaviour {
     }
   }
 
+	private Vector3 toVector(float3 vec) {
+		return new Vector3(vec.x, vec.y, vec.z);
+	}
+
+	private float3 toSlim(Vector3 vec) {
+		return math.float3(vec.x, vec.y, vec.z);
+	}
+
 	private struct ComputeVertices : IJob {
-		public NativeArray<Vector3> vertices;
+		public NativeArray<float3> vertices;
 
 		[ReadOnly]
-		public Vector3 HitPoint;
+		public float3 HitPoint;
 
 		[ReadOnly]
 		public float computedValue;
@@ -244,7 +253,7 @@ public class BoardScript: MonoBehaviour {
 		public float deltaTime;
 
 		[ReadOnly]
-		public Vector3 actionDirection;
+		public float3 actionDirection;
 
 		[ReadOnly]
 		public int xCoord;
@@ -255,7 +264,7 @@ public class BoardScript: MonoBehaviour {
 		public void Execute() {
 			for (var i = 0; i < vertices.Length; i++) {
 				var vertex = vertices[i];
-				var distance = vertex.DistanceIn2D(HitPoint);
+				var distance = math.distance(vertex, HitPoint);
 				if (distance > computedValue) {
 					continue;
 				}
