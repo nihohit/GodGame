@@ -5,6 +5,8 @@ using System.Linq;
 using Assets.Scripts.Base;
 using System;
 using UnityEngine.UI;
+using Unity.Collections;
+using Unity.Jobs;
 
 public class BoardScript: MonoBehaviour {
   public int heightChangeRate = 20;
@@ -188,21 +190,79 @@ public class BoardScript: MonoBehaviour {
       var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
       var computedValue = slider.value / 2;
       var lookingRange = computedValue + Constants.SizeOfTile;
-      foreach (var tile in tileScripts) {
-        if (tile.transform.position.DistanceIn2D(hit.Value.point) > lookingRange) {
-          continue;
-        }
-        tile.vertices = TileScript.transformedVectorsWithDistance(tile.vertices, 
-          hit.Value.point - tile.transform.position, (vertex, distance) => {
-          if (distance >= computedValue) {
-            return vertex;
-          }
-          return vertex + (actionDirection * (computedValue - distance) * Time.deltaTime);
-        }).ToList();
-        TileScript.adjustChildrenLocation(tile);
-      }
+			var hitPoint = hit.Value.point;
+			var deltaTime = Time.deltaTime;
+
+			var jobs = new List<ComputeVertices>();
+			var handles = new List<JobHandle>();
+
+			for (int i = 0; i < tileScripts.GetLength(0); i++) {
+				for (int j = 0; j < tileScripts.GetLength(1); j++) {
+					var tile = tileScripts[i, j];
+					if (tile.transform.position.DistanceIn2D(hit.Value.point) > lookingRange) {
+						continue;
+					}
+
+					var array = new NativeArray<Vector3>(tile.vertices.ToArray(), Allocator.Persistent);
+					var job = new ComputeVertices {
+						HitPoint = hitPoint - tile.transform.position,
+						computedValue = computedValue,
+						deltaTime = deltaTime,
+						actionDirection = actionDirection,
+						xCoord = i,
+						yCoord = j,
+						vertices = array
+					};
+					handles.Add(job.Schedule());
+					jobs.Add(job);
+				}
+			}
+
+			var nativeHandles = new NativeArray<JobHandle>(handles.ToArray(), Allocator.Persistent);
+			JobHandle.CompleteAll(nativeHandles);
+			foreach (var job in jobs) {
+				var tile = tileScripts[job.xCoord, job.yCoord];
+				tile.vertices = job.vertices.ToList();
+				job.vertices.Dispose();
+				TileScript.adjustChildrenLocation(tile);
+			}
+
+			nativeHandles.Dispose();
     }
   }
+
+	private struct ComputeVertices : IJob {
+		public NativeArray<Vector3> vertices;
+
+		[ReadOnly]
+		public Vector3 HitPoint;
+
+		[ReadOnly]
+		public float computedValue;
+
+		[ReadOnly]
+		public float deltaTime;
+
+		[ReadOnly]
+		public Vector3 actionDirection;
+
+		[ReadOnly]
+		public int xCoord;
+
+		[ReadOnly]
+		public int yCoord;
+
+		public void Execute() {
+			for (var i = 0; i < vertices.Length; i++) {
+				var vertex = vertices[i];
+				var distance = vertex.DistanceIn2D(HitPoint);
+				if (distance > computedValue) {
+					continue;
+				}
+				vertices[i] = vertex + (actionDirection * (computedValue - distance) * deltaTime);
+			}
+		}
+	}
 
   private System.Nullable<RaycastHit> currentMousePointedLocation() {
     RaycastHit hit = new RaycastHit();
