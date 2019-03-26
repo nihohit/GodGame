@@ -287,6 +287,8 @@ public class BoardScript: MonoBehaviour {
 		[ReadOnly]
 		public int yCoord;
 
+
+      const float kIntensity = 20;
 		public void Execute() {
 			for (var i = 0; i < vertices.Length; i++) {
 				var vertex = vertices[i];
@@ -294,7 +296,8 @@ public class BoardScript: MonoBehaviour {
 				if (distance > computedValue) {
 					continue;
 				}
-				vertices[i] = vertex + (actionDirection * (computedValue - distance) * deltaTime);
+        var intensity = math.cos(distance / computedValue) * kIntensity;
+				vertices[i] = vertex + (actionDirection * intensity * deltaTime);
 			}
 		}
 	}
