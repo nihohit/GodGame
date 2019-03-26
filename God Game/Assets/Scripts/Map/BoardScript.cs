@@ -204,7 +204,12 @@ public class BoardScript: MonoBehaviour {
 						continue;
 					}
 
-					var array = new NativeArray<float3>(tile.vertices.Select(toSlim).ToArray(), Allocator.Persistent);
+          var vertices = tile.vertices;
+          var array = new NativeArray<float3>(5, Allocator.Persistent);
+          for (int index = 0; index < array.Length; index++) {
+            array[index] = toSlim(vertices[index]);
+          }
+					
 					var job = new ComputeVertices {
 						HitPoint = hitPoint - tile.transform.position,
 						computedValue = computedValue,
@@ -219,11 +224,26 @@ public class BoardScript: MonoBehaviour {
 				}
 			}
 
+      var newVertices = new List<Vector3>(5);
+      var populated = false;
 			var nativeHandles = new NativeArray<JobHandle>(handles.ToArray(), Allocator.Persistent);
 			JobHandle.CompleteAll(nativeHandles);
 			foreach (var job in jobs) {
 				var tile = tileScripts[job.xCoord, job.yCoord];
-				tile.vertices = job.vertices.Select(toVector).ToList();
+        if (populated) {
+          for (int i = 0; i < job.vertices.Length; i++) {
+            //TODO - understand why this doesn't work, and then set populated.
+            copyToVector(job.vertices[i], newVertices[i]);
+          }
+        } else {
+          newVertices.Clear();
+          for (int i = 0; i < job.vertices.Length; i++) {
+            newVertices.Add(toVector(job.vertices[i]));
+          }
+          //populated = true;
+        }
+
+				tile.vertices = newVertices;
 				job.vertices.Dispose();
 				TileScript.adjustChildrenLocation(tile);
 			}
@@ -235,6 +255,12 @@ public class BoardScript: MonoBehaviour {
 	private Vector3 toVector(float3 vec) {
 		return new Vector3(vec.x, vec.y, vec.z);
 	}
+
+  	private void copyToVector(float3 vec, Vector3 target) {
+      target.x = vec.x;
+      target.y = vec.y;
+      target.z = vec.z;
+    }
 
 	private float3 toSlim(Vector3 vec) {
 		return math.float3(vec.x, vec.y, vec.z);
