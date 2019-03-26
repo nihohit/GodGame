@@ -23,7 +23,6 @@ public struct Tile {
 
 	private void updateVertices(NativeArray<Vector3> newVertices) {
 		var oldVertices = vertices;
-		Assert.AreEqual(newVertices.Length, kExpectedNumberOfVertices);
 		var internalMesh = meshFilter.mesh;
 		internalMesh.vertices = newVertices.ToArray();
 		updateMesh(internalMesh);
@@ -66,7 +65,6 @@ public class TileScript: MonoBehaviour {
     }
 
     set {
-      Assert.AreEqual(vertices.Count, kExpectedNumberOfVertices);
       internalMesh.SetVertices(value);
       internalMesh = internalMesh;
     }
@@ -169,23 +167,40 @@ public class TileScript: MonoBehaviour {
 
     var vertices = tile.vertices;
     var normals = tile.meshFilter.mesh.normals;
-    var distances = vertices
-      .Select(vertex => {
-        var vertexWithoutHeight = new Vector3(vertex.x, 0, vertex.z);
-        return Vector3.Distance(vertexWithoutHeight, positionWithoutHeight);
-      })
-      .ToList();
-    var indicesOfNearestPoints = distances
-      .OrderBy(distance => distance)
-      .Take(3)
-      .Select(distance => distances.IndexOf(distance));
+    var distances = new float[kExpectedNumberOfVertices];
+
+    var closestDistances = new [] { 1000f, 1000f, 1000f};
+    var indicesOfNearestPoints = new int[3];
+    for (int i = 0; i < kExpectedNumberOfVertices; i++) {
+      var vertex = vertices[i];
+      vertex.y = 0;
+      var distance = Vector3.Distance(vertex, positionWithoutHeight);
+      distances[i] = distance;
+      if (distance < closestDistances[0]) {
+        closestDistances[2] = closestDistances[1];
+        closestDistances[1] = closestDistances[0];
+        closestDistances[0] = distance;
+        indicesOfNearestPoints[2] = indicesOfNearestPoints[1];
+        indicesOfNearestPoints[1] = indicesOfNearestPoints[0];
+        indicesOfNearestPoints[0] = i;
+      } else if (distance < closestDistances[1]) {
+        closestDistances[2] = closestDistances[1];
+        closestDistances[1] = distance;
+        indicesOfNearestPoints[2] = indicesOfNearestPoints[1];
+        indicesOfNearestPoints[1] = i;
+      } else if (distance < closestDistances[2]) {
+        closestDistances[2] = distance;
+        indicesOfNearestPoints[2] = i;
+      }
+    }
 
     var newHeight = 0f;
     var newNormal = Vector3.zero;
     var sumOfDistances = 0f;
+    
 
     foreach (var index in indicesOfNearestPoints) {
-      var distanceAsWeight = 1 / distances[index];
+      var distanceAsWeight = 1f / distances[index];
       sumOfDistances += distanceAsWeight;
       newHeight += vertices[index].y * distanceAsWeight;
       newNormal += normals[index] * distanceAsWeight;
