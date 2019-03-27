@@ -23,9 +23,15 @@ public class BoardScript : MonoBehaviour {
 	private Vector3 currentTreeEulerRotation;
 	private GameObject[] treePrefabs;
 	private bool ignoreTreeAddition;
+	private NativeArray<JobHandle> adjustVerticesHandles;
+
+	public void OnDestroy() {
+		adjustVerticesHandles.Dispose();
+	}
 
 	// Use this for initialization
 	void Start() {
+		adjustVerticesHandles = new NativeArray<JobHandle>(9, Allocator.Persistent);
 		initializeTiles();
 	}
 
@@ -195,7 +201,8 @@ public class BoardScript : MonoBehaviour {
 			var deltaTime = Time.deltaTime;
 
 			var jobs = new List<ComputeVertices>();
-			var handles = new List<JobHandle>();
+			var tileRaisingJobs = new List<JobHandle>();
+			var childMovingJobs = new List<JobHandle>();
 
 			for (int i = 0; i < tileScripts.GetLength(0); i++) {
 				for (int j = 0; j < tileScripts.GetLength(1); j++) {
@@ -205,9 +212,8 @@ public class BoardScript : MonoBehaviour {
 					}
 
 					var vertices = tile.vertices;
-					var array = new NativeArray<float3>(5, Allocator.Persistent);
-					for (int index = 0; index < array.Length; index++) {
-						array[index] = toSlim(vertices[index]);
+					for (int index = 0; index < Constants.NumberOfVerticesInTile; index++) {
+						tile.nativeVertices[index] = vertices[index].ToSlim();
 					}
 
 					var job = new ComputeVertices {
@@ -217,53 +223,39 @@ public class BoardScript : MonoBehaviour {
 						actionDirection = actionDirection,
 						xCoord = i,
 						yCoord = j,
-						vertices = array
+						vertices = tile.nativeVertices
 					};
-					handles.Add(job.Schedule());
+					var handle = job.Schedule();
+					tileRaisingJobs.Add(handle);
 					jobs.Add(job);
+					childMovingJobs.Add(TileScript.adjustChildrenLocation(tile, handle));
 				}
 			}
 
-			var newVertices = new List<Vector3>(5);
+			var newVertices = new List<Vector3>(Constants.NumberOfVerticesInTile);
 			var populated = false;
-			var nativeHandles = new NativeArray<JobHandle>(handles.ToArray(), Allocator.Persistent);
+			var nativeHandles = new NativeArray<JobHandle>(tileRaisingJobs.ToArray(), Allocator.Temp);
 			JobHandle.CompleteAll(nativeHandles);
 			foreach (var job in jobs) {
 				var tile = tileScripts[job.xCoord, job.yCoord];
 				if (populated) {
 					for (int i = 0; i < job.vertices.Length; i++) {
 						//TODO - understand why this doesn't work, and then set populated.
-						copyToVector(job.vertices[i], newVertices[i]);
+						job.vertices[i].CopyToVector(newVertices[i]);
 					}
 				} else {
-					newVertices.Clear();
-					for (int i = 0; i < job.vertices.Length; i++) {
-						newVertices.Add(toVector(job.vertices[i]));
-					}
+					job.vertices.ConvertInto(newVertices);
 					//populated = true;
 				}
 
 				tile.vertices = newVertices;
-				job.vertices.Dispose();
-				TileScript.adjustChildrenLocation(tile);
 			}
+
+			nativeHandles.CopyFrom(childMovingJobs.ToArray());
+			JobHandle.CompleteAll(nativeHandles);
 
 			nativeHandles.Dispose();
 		}
-	}
-
-	private Vector3 toVector(float3 vec) {
-		return new Vector3(vec.x, vec.y, vec.z);
-	}
-
-	private void copyToVector(float3 vec, Vector3 target) {
-		target.x = vec.x;
-		target.y = vec.y;
-		target.z = vec.z;
-	}
-
-	private float3 toSlim(Vector3 vec) {
-		return math.float3(vec.x, vec.y, vec.z);
 	}
 
 	private struct ComputeVertices : IJob {
@@ -289,6 +281,7 @@ public class BoardScript : MonoBehaviour {
 
 
 		const float kIntensity = 20;
+
 		public void Execute() {
 			for (var i = 0; i < vertices.Length; i++) {
 				var vertex = vertices[i];
@@ -313,18 +306,22 @@ public class BoardScript : MonoBehaviour {
 
 	public void updateTile(TileScript tile, TileUpdateDirection direction) {
 		float change = heightChangeRate * Time.deltaTime;
-		BoardScript.adjustVertices(tile, change, interactionMode, direction);
+		BoardScript.adjustVertices(tile, change, interactionMode, direction, adjustVerticesHandles);
 	}
 
-	public static void adjustVertices(TileScript tile, float changeRate, InteractionMode type, TileUpdateDirection direction) {
+	public static void adjustVertices(TileScript tile, float changeRate, InteractionMode type, TileUpdateDirection direction, NativeArray<JobHandle> adjustVerticesHandles) {
 		var newVertices = type == InteractionMode.LowerRaiseTile ? raisedVertices(tile, changeRate, direction) :
 				flattenVertices(tile, changeRate, direction);
+		int count = 0;
 		foreach (var neighbour in tile.neighbours) {
 			var offset = tile.transform.position - neighbour.transform.position;
 			var offsetedVertices = newVertices.Select(vertex => vertex + offset).ToList();
 			neighbour.vertices = TileScript.adjustedVertices(neighbour.vertices, offsetedVertices);
-			TileScript.adjustChildrenLocation(neighbour);
+			adjustVerticesHandles[count] = TileScript.adjustChildrenLocation(neighbour, default(JobHandle));
+			count++;
 		}
+
+		JobHandle.CompleteAll(adjustVerticesHandles);
 	}
 
 	private static List<Vector3> raisedVertices(TileScript tile, float changeRate, TileUpdateDirection direction) {

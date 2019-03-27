@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
 using System;
+using Unity.Collections;
+using Unity.Jobs;
 
 public class BoardScriptPlayTests : IPrebuildSetup {
 
@@ -50,7 +52,10 @@ public class BoardScriptPlayTests : IPrebuildSetup {
         tile1.directNeighbours = new[] { tile2 };
         tile1.indirectNeighbours = new[] { tile3 };
 
-        BoardScript.adjustVertices(tile1, 10, InteractionMode.LowerRaiseTile, TileUpdateDirection.Up);
+		var handles = new NativeArray<JobHandle>(9, Allocator.Temp);
+
+				BoardScript.adjustVertices(tile1, 10, InteractionMode.LowerRaiseTile, TileUpdateDirection.Up, handles);
+		handles.Dispose();
 
         var expectedVertices = new List<Vector3>{
             new Vector3(-5, 10, -5),
