@@ -32,6 +32,7 @@ public struct Tile {
 
 public class TileScript: MonoBehaviour {
   private const int kExpectedNumberOfVertices = 5;
+	private readonly List<Vector3> internalVertices = new List<Vector3>(kExpectedNumberOfVertices);
 
   public IEnumerable<TileScript> directNeighbours { get; set; }
 
@@ -59,13 +60,16 @@ public class TileScript: MonoBehaviour {
 
   public List<Vector3> vertices {
     get {
-      var vertices = new List<Vector3>();
-      internalMesh.GetVertices(vertices);
-      return vertices;
+			if (internalVertices.Count == 0) {
+				internalMesh.GetVertices(internalVertices);
+			}
+      return internalVertices;
     }
 
     set {
-      internalMesh.SetVertices(value);
+			internalVertices.Clear();
+			internalVertices.AddRange(value);
+			internalMesh.SetVertices(value);
       internalMesh = internalMesh;
     }
   }
