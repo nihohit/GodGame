@@ -128,7 +128,7 @@ public class TileScript: MonoBehaviour {
     meshCollider = GetComponent<MeshCollider>();
 		nativeVertices = new NativeArray<float3>(Constants.NumberOfVerticesInTile, Allocator.Persistent);
 		nativeNormals = new NativeArray<float3>(Constants.NumberOfVerticesInTile, Allocator.Persistent);
-		transforms = new TransformAccessArray();
+		transforms = new TransformAccessArray(9);
 }
 
   // Use this for initialization

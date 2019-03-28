@@ -33,8 +33,9 @@ public static class UnityExtensions {
 	}
 
 	public static void ConvertInto(this NativeArray<float3> floats, List<Vector3> vectors) {
+		vectors.Clear();
 		for (int i = 0; i < floats.Length; i++) {
-			vectors[i] = floats[i].ToVector();
+			vectors.Add(floats[i].ToVector());
 		}
 	}
 }
