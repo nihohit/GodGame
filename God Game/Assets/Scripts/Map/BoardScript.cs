@@ -8,6 +8,7 @@ using UnityEngine.UI;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Burst;
 
 public class BoardScript : MonoBehaviour {
 	public int heightChangeRate = 20;
@@ -282,6 +283,7 @@ public class BoardScript : MonoBehaviour {
 
 		const float kIntensity = 20;
 
+		[BurstCompile]
 		public void Execute() {
 			for (var i = 0; i < vertices.Length; i++) {
 				var vertex = vertices[i];
