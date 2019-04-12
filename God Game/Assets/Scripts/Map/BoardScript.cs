@@ -5,23 +5,53 @@ using System.Linq;
 using Assets.Scripts.Base;
 using System;
 
+public static class AudioController
+{
+	public static IEnumerator FadeOut(AudioSource audioSource, float FadeTime)
+	{
+		float startVolume = audioSource.volume;
+		while (audioSource.volume > 0)
+		{
+			audioSource.volume -= startVolume * Time.deltaTime / FadeTime;
+			yield return null;
+		}
+		audioSource.Stop();
+	}
+	public static IEnumerator FadeIn(AudioSource audioSource, float FadeTime)
+	{
+		audioSource.Play();
+		audioSource.volume = 0f;
+		while (audioSource.volume < 1)
+		{
+			audioSource.volume += Time.deltaTime / FadeTime;
+			yield return null;
+		}
+	}
+}
+
 public class BoardScript: MonoBehaviour {
   public int heightChangeRate = 20;
   public int x, z;
   public bool flatten, changeHeight;
+	public AudioSource groundMoving;
+	public AudioSource treesPlanting;
+	public AudioClip[] treeFallingEfects;
 
-  private TileScript[,] tileScripts;
+	private TileScript[,] tileScripts;
   private GameObject[,] tiles;
   private InteractionMode interactionMode;
   private TerrainObjectScript currentTree;
   private Vector3 currentTreeEulerRotation;
   private GameObject[] treePrefabs;
   private bool ignoreTreeAddition;
+	private IEnumerator currentSoundFade;
+	private bool plantedTreesInLastUpdate = false;
+	private bool movedTerrainInLastUpdate = false;
 
   // Use this for initialization
   void Start() {
     initializeTiles();
-  }
+	}
 
   private void initializeTiles() {
     GameObject prefab = (GameObject)Resources.Load("Prefabs/Tile");
@@ -104,6 +134,17 @@ public class BoardScript: MonoBehaviour {
       return;
     }
 
+		if (Input.GetMouseButtonUp(1) || Input.GetMouseButtonUp(0)) {
+			if (movedTerrainInLastUpdate) {
+				StartCoroutine(AudioController.FadeOut(groundMoving, 0.1f));
+			}
+			if (plantedTreesInLastUpdate) {
+				StartCoroutine(AudioController.FadeOut(treesPlanting, 0.1f));
+			}
+			movedTerrainInLastUpdate = false;
+			plantedTreesInLastUpdate = false;
+		}
+
     if (interactionMode == InteractionMode.AddTree) {
       handleTreeInteraction();
     } else {
@@ -121,9 +162,17 @@ public class BoardScript: MonoBehaviour {
 
     if (Input.GetMouseButton(0)) {
       addCurrentTree(hit.Value);
+			if (!plantedTreesInLastUpdate) {
+				StartCoroutine(AudioController.FadeIn(treesPlanting, 0.3f));
+				plantedTreesInLastUpdate = true;
+			}
     } else if (Input.GetMouseButton(1)) {
       removeExistingTrees();
-    }
+			if (!plantedTreesInLastUpdate) {
+				StartCoroutine(AudioController.FadeIn(treesPlanting, 0.3f));
+				plantedTreesInLastUpdate = true;
+			}
+		}
   }
 
   private void removeExistingTrees() {
@@ -173,7 +222,11 @@ public class BoardScript: MonoBehaviour {
       return;
     }
 
-    var hit = currentMousePointedLocation();
+		if (!movedTerrainInLastUpdate) {
+			StartCoroutine(AudioController.FadeIn(groundMoving, 0.3f));
+			movedTerrainInLastUpdate = true;
+		}
+		var hit = currentMousePointedLocation();
     if (!hit.HasValue) {
       return;
     }
