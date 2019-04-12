@@ -6,6 +6,7 @@ public class CameraControllerScript : MonoBehaviour {
   public float moveSpeedMinZoom, moveSpeedMaxZoom;
   public float rotationSpeed;
   public BoardScript board;
+	public AudioSource backgroundMusic;
 
   Transform swivel, stick;
   float zoom = 1f;
@@ -35,10 +36,13 @@ public class CameraControllerScript : MonoBehaviour {
   }
 
   void AdjustZoom(float delta) {
+		const float kMinAmbientvolume = 0.1f;
     zoom = Mathf.Clamp01(zoom + delta);
 
-    float distance = Mathf.Lerp(stickMinZoom, stickMaxZoom, zoom);
-    stick.localPosition = new Vector3(0f, 0f, distance);
+		float distance = Mathf.Lerp(stickMinZoom, stickMaxZoom, zoom);
+		float volume = kMinAmbientvolume + ((1f - kMinAmbientvolume) * ((distance - stickMinZoom) / (stickMaxZoom - stickMinZoom)));
+		backgroundMusic.volume = volume;
+		stick.localPosition = new Vector3(0f, 0f, distance);
 
     float angle = Mathf.Lerp(swivelMinZoom, swivelMaxZoom, zoom);
     swivel.localRotation = Quaternion.Euler(angle, 0f, 0f);
