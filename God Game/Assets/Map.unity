@@ -381,7 +381,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7ac6bacc05e6b34db33fdd3a42dca6d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  heightChangeRate: 20
+  heightChangeRate: 2
   x: 10
   z: 10
   flatten: 0
@@ -1305,10 +1305,10 @@ MonoBehaviour:
   m_FillRect: {fileID: 1340501546}
   m_HandleRect: {fileID: 39878162}
   m_Direction: 0
-  m_MinValue: 15
-  m_MaxValue: 60
+  m_MinValue: 3
+  m_MaxValue: 12
   m_WholeNumbers: 0
-  m_Value: 30
+  m_Value: 5.75
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1403,12 +1403,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47f29012264794b4ba99ab31dd6c68bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stickMinZoom: -400
-  stickMaxZoom: -100
+  stickMinZoom: -80
+  stickMaxZoom: -20
   swivelMinZoom: 75
   swivelMaxZoom: 20
-  moveSpeedMinZoom: 400
-  moveSpeedMaxZoom: 100
+  moveSpeedMinZoom: 80
+  moveSpeedMaxZoom: 20
   rotationSpeed: 180
   board: {fileID: 50105159}
 --- !u!4 &1012197752

@@ -11,7 +11,7 @@ using Unity.Mathematics;
 using Unity.Burst;
 
 public class BoardScript : MonoBehaviour {
-	public int heightChangeRate = 20;
+	public float heightChangeRate;
 	public int x, z;
 	public bool flatten, changeHeight;
 	public Slider slider;
@@ -40,11 +40,13 @@ public class BoardScript : MonoBehaviour {
 		GameObject prefab = (GameObject)Resources.Load("Prefabs/Tile");
 		treePrefabs = Resources.LoadAll<GameObject>("Prefabs/Trees/RegularTrees");
 
+		var scale = new Vector3(Constants.SizeOfTile, 0, Constants.SizeOfTile);
+		var halfSize = Constants.SizeOfTile / 2;
 		tiles = new GameObject[x * 2, z * 2];
 		tileScripts = new TileScript[x * 2, z * 2];
 		for (int i = -x; i < x; i++) {
 			for (int j = -z; j < z; j++) {
-				var tile = instantiateObject(prefab, Vector3.Scale(prefab.GetComponent<Renderer>().bounds.size, new Vector3(i, 0, j)));
+				var tile = instantiateObject(prefab, Vector3.Scale(scale, new Vector3(i, 0, j)));
 				tiles[i + x, j + z] = tile;
 				tileScripts[i + x, j + z] = tile.GetComponent<TileScript>();
 				tile.name = string.Format("Tile {0}, {1}", i + x, j + z);
@@ -52,7 +54,7 @@ public class BoardScript : MonoBehaviour {
 
 				var tree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero);
 				tree.transform.parent = tile.transform;
-				tree.transform.localPosition = new Vector3((float)Randomizer.NextDouble(-5, 5), 0, (float)Randomizer.NextDouble(-5, 5));
+				tree.transform.localPosition = new Vector3((float)Randomizer.NextDouble(-halfSize, halfSize), 0, (float)Randomizer.NextDouble(-halfSize, halfSize));
 				randomRotationAndScale(tree.transform);
 			}
 		}
@@ -185,7 +187,7 @@ public class BoardScript : MonoBehaviour {
 		var hitPoint = hit.Value.point;
 		projector.transform.position = hitPoint + (Vector3.up * slider.value);
 		projector.SetActive(true);
-
+		var currentHeightChangeRate = heightChangeRate * Constants.SizeOfTile;
 
 		TileUpdateDirection direction;
 		if (Input.GetMouseButton(0)) {
@@ -229,7 +231,8 @@ public class BoardScript : MonoBehaviour {
 						actionDirection = actionDirection,
 						xCoord = i,
 						yCoord = j,
-						vertices = tile.nativeVertices
+						vertices = tile.nativeVertices,
+						heightChangeRate = currentHeightChangeRate
 					};
 					var handle = job.Schedule();
 					tileRaisingJobs.Add(handle);
@@ -285,8 +288,8 @@ public class BoardScript : MonoBehaviour {
 		[ReadOnly]
 		public int yCoord;
 
-
-		const float kIntensity = 20;
+		[ReadOnly]
+		public float heightChangeRate;
 
 		[BurstCompile]
 		public void Execute() {
@@ -296,7 +299,7 @@ public class BoardScript : MonoBehaviour {
 				if (distance > computedValue) {
 					continue;
 				}
-				var intensity = math.cos(distance / computedValue) * kIntensity;
+				var intensity = math.cos(distance / computedValue) * heightChangeRate;
 				vertices[i] = vertex + (actionDirection * intensity * deltaTime);
 			}
 		}
@@ -312,7 +315,7 @@ public class BoardScript : MonoBehaviour {
 	}
 
 	public void updateTile(TileScript tile, TileUpdateDirection direction) {
-		float change = heightChangeRate * Time.deltaTime;
+		float change = heightChangeRate * Time.deltaTime * Constants.SizeOfTile;
 		BoardScript.adjustVertices(tile, change, interactionMode, direction, adjustVerticesHandles);
 	}
 
@@ -381,5 +384,6 @@ public class BoardScript : MonoBehaviour {
 		obj.localRotation = Quaternion.Euler(0f, rotation, 0f);
 		var scale = (float)Randomizer.NextDouble(-0.2, 0.2);
 		obj.localScale += new Vector3(scale, scale, scale);
+		obj.localScale = obj.localScale * 0.2f;
 	}
 }

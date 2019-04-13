@@ -14,7 +14,10 @@ public class CameraControllerScript : MonoBehaviour {
   void Awake() {
     swivel = transform.GetChild(0);
     stick = swivel.GetChild(0);
-  }
+		AdjustZoom(0);
+		AdjustRotation(0);
+		AdjustPosition(0, 0);
+	}
 
   void Update() {
     float zoomDelta = Input.GetAxis("Mouse ScrollWheel");
