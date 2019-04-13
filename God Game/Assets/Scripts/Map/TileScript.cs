@@ -61,7 +61,10 @@ public struct AdjustChildrenJob: IJobParallelForTransform {
 		}
 
 		child.localPosition = new Vector3(positionWithoutHeight.x, newHeight / sumOfDistances, positionWithoutHeight.z);
-		child.rotation = Quaternion.FromToRotation(Vector3.up, newNormal / sumOfDistances);
+		var groundNormal = newNormal / sumOfDistances;
+		var right = child.rotation * Vector3.right;
+		Vector3 forwardsVector = -Vector3.Cross(groundNormal, right);
+		child.localRotation = Quaternion.LookRotation(forwardsVector, groundNormal);
 	}
 }
 
