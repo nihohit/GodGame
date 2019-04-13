@@ -15,7 +15,7 @@ public class BoardScript : MonoBehaviour {
 	public int x, z;
 	public bool flatten, changeHeight;
 	public Slider slider;
-	public Projector projector;
+	public GameObject projector;
 
 	private TileScript[,] tileScripts;
 	private GameObject[,] tiles;
@@ -124,6 +124,7 @@ public class BoardScript : MonoBehaviour {
 	}
 
 	private void handleTreeInteraction() {
+		projector.SetActive(false);
 		var hit = currentMousePointedLocation();
 		if (!hit.HasValue) {
 			return;
@@ -181,6 +182,10 @@ public class BoardScript : MonoBehaviour {
 			return;
 		}
 
+		var hitPoint = hit.Value.point;
+		projector.transform.position = hitPoint + (Vector3.up * slider.value);
+		projector.SetActive(true);
+
 
 		TileUpdateDirection direction;
 		if (Input.GetMouseButton(0)) {
@@ -198,7 +203,7 @@ public class BoardScript : MonoBehaviour {
 			var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
 			var computedValue = slider.value / 2;
 			var lookingRange = computedValue + Constants.SizeOfTile;
-			var hitPoint = hit.Value.point;
+			
 			var deltaTime = Time.deltaTime;
 
 			var jobs = new List<ComputeVertices>();
