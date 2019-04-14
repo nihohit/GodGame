@@ -125,6 +125,7 @@ public class BoardScript : MonoBehaviour {
 		}
 	}
 
+	#region tree interaction
 	private void handleTreeInteraction() {
 		projector.SetActive(false);
 		var hit = currentMousePointedLocation();
@@ -178,6 +179,39 @@ public class BoardScript : MonoBehaviour {
 		currentTree.transform.Rotate(currentTreeEulerRotation);
 	}
 
+	public void setAddTree(bool active) {
+		if (!active) {
+			Destroy(currentTree);
+			return;
+		}
+		createNewTree();
+	}
+
+	private void createNewTree() {
+		currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero).GetComponent<TerrainObjectScript>();
+		currentTree.transform.position = new Vector3(999, 0, 999);
+		currentTree.TemporaryObject = true;
+		randomRotationAndScale(currentTree.transform);
+		currentTreeEulerRotation = currentTree.transform.localEulerAngles;
+		foreach (var material in currentTree.GetComponent<Renderer>().materials) {
+			var color = material.color;
+			color.a = 0.3f;
+			material.color = color;
+		}
+		interactionMode = InteractionMode.AddTree;
+	}
+
+	private void randomRotationAndScale(Transform obj) {
+		var rotation = Randomizer.Next(360);
+		obj.localRotation = Quaternion.Euler(0f, rotation, 0f);
+		var scale = (float)Randomizer.NextDouble(-0.2, 0.2);
+		obj.localScale += new Vector3(scale, scale, scale);
+		obj.localScale = obj.localScale * 0.2f;
+	}
+
+	#endregion
+
+	#region tile interaction
 	private void handleTileInteraction() {
 		var hit = currentMousePointedLocation();
 		if (!hit.HasValue) {
@@ -343,6 +377,8 @@ public class BoardScript : MonoBehaviour {
 		return TileScript.flattenVertices(tile.vertices, changeRate, direction).ToList();
 	}
 
+	#endregion
+
 	public void setFlatten(bool active) {
 		if (!active) {
 			return;
@@ -355,35 +391,5 @@ public class BoardScript : MonoBehaviour {
 			return;
 		}
 		interactionMode = InteractionMode.LowerRaiseTile;
-	}
-
-	public void setAddTree(bool active) {
-		if (!active) {
-			Destroy(currentTree);
-			return;
-		}
-		createNewTree();
-	}
-
-	private void createNewTree() {
-		currentTree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero).GetComponent<TerrainObjectScript>();
-		currentTree.transform.position = new Vector3(999, 0, 999);
-		currentTree.TemporaryObject = true;
-		randomRotationAndScale(currentTree.transform);
-		currentTreeEulerRotation = currentTree.transform.localEulerAngles;
-		foreach (var material in currentTree.GetComponent<Renderer>().materials) {
-			var color = material.color;
-			color.a = 0.3f;
-			material.color = color;
-		}
-		interactionMode = InteractionMode.AddTree;
-	}
-
-	private void randomRotationAndScale(Transform obj) {
-		var rotation = Randomizer.Next(360);
-		obj.localRotation = Quaternion.Euler(0f, rotation, 0f);
-		var scale = (float)Randomizer.NextDouble(-0.2, 0.2);
-		obj.localScale += new Vector3(scale, scale, scale);
-		obj.localScale = obj.localScale * 0.2f;
 	}
 }
