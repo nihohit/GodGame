@@ -25,14 +25,20 @@ public class BoardScript : MonoBehaviour {
 	private GameObject[] treePrefabs;
 	private bool ignoreTreeAddition;
 	private NativeArray<JobHandle> adjustVerticesHandles;
+	private NativeArray<float> cornerHeights;
+	private NativeArray<float> centerHeights;
 
 	public void OnDestroy() {
 		adjustVerticesHandles.Dispose();
+		cornerHeights.Dispose();
+		centerHeights.Dispose();
 	}
 
 	// Use this for initialization
 	void Start() {
 		adjustVerticesHandles = new NativeArray<JobHandle>(9, Allocator.Persistent);
+		cornerHeights = new NativeArray<float>((x + 1) * (z + 1), Allocator.Persistent);
+		centerHeights = new NativeArray<float>(x * z, Allocator.Persistent);
 		initializeTiles();
 	}
 
@@ -244,12 +250,13 @@ public class BoardScript : MonoBehaviour {
 			var jobs = new List<ComputeVertices>();
 			var tileRaisingJobs = new List<JobHandle>();
 			var childMovingJobs = new List<JobHandle>();
-			var adjustedPoint = hitPoint / Constants.SizeOfTile;
+			var adjustedX = hitPoint.x / Constants.SizeOfTile;
+			var adjustedZ = hitPoint.x / Constants.SizeOfTile;
 
-			var minX = Mathf.FloorToInt(Mathf.Max(adjustedPoint.x - lookingRange, -x));
-			var maxX = Mathf.Min(adjustedPoint.x + lookingRange, x);
-			var minZ = Mathf.FloorToInt(Mathf.Max(adjustedPoint.z - lookingRange, -z));
-			var maxZ = Mathf.Min(adjustedPoint.z + lookingRange, z);
+			var minX = Mathf.FloorToInt(Mathf.Max(adjustedX - lookingRange, -x));
+			var maxX = Mathf.Min(adjustedX + lookingRange, x);
+			var minZ = Mathf.FloorToInt(Mathf.Max(adjustedZ - lookingRange, -z));
+			var maxZ = Mathf.Min(adjustedZ + lookingRange, z);
 			for (int i = minX; i < maxX; i++) {
 				for (int j = minZ; j < maxZ; j++) {
 					var xIndex = i + x;
