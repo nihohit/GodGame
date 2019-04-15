@@ -238,20 +238,23 @@ public class BoardScript : MonoBehaviour {
 		} else if (InteractionMode.LowerRaiseTile == interactionMode) {
 			var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
 			var computedValue = slider.value / 2;
-			var lookingRange = computedValue + Constants.SizeOfTile;
-			
+			var lookingRange = (computedValue / Constants.SizeOfTile) + 1;
 			var deltaTime = Time.deltaTime;
 
 			var jobs = new List<ComputeVertices>();
 			var tileRaisingJobs = new List<JobHandle>();
 			var childMovingJobs = new List<JobHandle>();
+			var adjustedPoint = hitPoint / Constants.SizeOfTile;
 
-			for (int i = 0; i < tileScripts.GetLength(0); i++) {
-				for (int j = 0; j < tileScripts.GetLength(1); j++) {
-					var tile = tileScripts[i, j];
-					if (tile.transform.position.DistanceIn2D(hit.Value.point) > lookingRange) {
-						continue;
-					}
+			var minX = Mathf.FloorToInt(Mathf.Max(adjustedPoint.x - lookingRange, -x));
+			var maxX = Mathf.Min(adjustedPoint.x + lookingRange, x);
+			var minZ = Mathf.FloorToInt(Mathf.Max(adjustedPoint.z - lookingRange, -z));
+			var maxZ = Mathf.Min(adjustedPoint.z + lookingRange, z);
+			for (int i = minX; i < maxX; i++) {
+				for (int j = minZ; j < maxZ; j++) {
+					var xIndex = i + x;
+					var zIndex = j + z;
+					var tile = tileScripts[xIndex, zIndex];
 
 					var vertices = tile.vertices;
 					for (int index = 0; index < Constants.NumberOfVerticesInTile; index++) {
@@ -263,8 +266,8 @@ public class BoardScript : MonoBehaviour {
 						computedValue = computedValue,
 						deltaTime = deltaTime,
 						actionDirection = actionDirection,
-						xCoord = i,
-						yCoord = j,
+						xCoord = xIndex,
+						yCoord = zIndex,
 						vertices = tile.nativeVertices,
 						heightChangeRate = currentHeightChangeRate
 					};
