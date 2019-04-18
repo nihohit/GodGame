@@ -311,6 +311,7 @@ public class BoardScript : MonoBehaviour {
 		}
 	}
 
+	[BurstCompile]
 	private struct ComputeVertices : IJob {
 		public NativeArray<float3> vertices;
 
@@ -335,7 +336,6 @@ public class BoardScript : MonoBehaviour {
 		[ReadOnly]
 		public float heightChangeRate;
 
-		[BurstCompile]
 		public void Execute() {
 			for (var i = 0; i < vertices.Length; i++) {
 				var vertex = vertices[i];

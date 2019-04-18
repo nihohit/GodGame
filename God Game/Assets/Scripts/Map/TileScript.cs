@@ -11,6 +11,7 @@ using Unity.Mathematics;
 using Unity.Burst;
 using Unity.Jobs;
 
+[BurstCompile]
 public struct AdjustChildrenJob: IJobParallelForTransform {
 	[ReadOnly]
 	public NativeArray<float3> vertices;
