@@ -251,7 +251,7 @@ public class BoardScript : MonoBehaviour {
 			var tileRaisingJobs = new List<JobHandle>();
 			var childMovingJobs = new List<JobHandle>();
 			var adjustedX = hitPoint.x / Constants.SizeOfTile;
-			var adjustedZ = hitPoint.x / Constants.SizeOfTile;
+			var adjustedZ = hitPoint.z / Constants.SizeOfTile;
 
 			var minX = Mathf.FloorToInt(Mathf.Max(adjustedX - lookingRange, -x));
 			var maxX = Mathf.Min(adjustedX + lookingRange, x);
