@@ -22,10 +22,13 @@ public struct AdjustChildrenJob: IJobParallelForTransform {
 	public void Execute(int runIndex, TransformAccess child) {
 		var positionWithoutHeight = math.float3(child.localPosition.x, 0, child.localPosition.z) ;
 
-		var distances = new float[Constants.NumberOfVerticesInTile];
+		var distances = new NativeArray<float>(Constants.NumberOfVerticesInTile, Allocator.Temp);
 
-		var closestDistances = new[] { 1000f, 1000f, 1000f };
-		var indicesOfNearestPoints = new int[3];
+		var closestDistances = new NativeArray<float>(3, Allocator.Temp);
+		closestDistances[0] = 1000f;
+		closestDistances[1] = 1000f;
+		closestDistances[2] = 1000f;
+		var indicesOfNearestPoints = new NativeArray<int>(3, Allocator.Temp);
 		for (int i = 0; i < Constants.NumberOfVerticesInTile; i++) {
 			var vertex = vertices[i];
 			vertex.y = 0;
@@ -54,7 +57,8 @@ public struct AdjustChildrenJob: IJobParallelForTransform {
 		var sumOfDistances = 0f;
 
 
-		foreach (var index in indicesOfNearestPoints) {
+		for (int i = 0; i < indicesOfNearestPoints.Length; i++) {
+			var index = indicesOfNearestPoints[i];
 			var distanceAsWeight = 1f / distances[index];
 			sumOfDistances += distanceAsWeight;
 			newHeight += vertices[index].y * distanceAsWeight;
@@ -66,6 +70,9 @@ public struct AdjustChildrenJob: IJobParallelForTransform {
 		var right = child.rotation * Vector3.right;
 		Vector3 forwardsVector = -Vector3.Cross(groundNormal, right);
 		child.localRotation = Quaternion.LookRotation(forwardsVector, groundNormal);
+		indicesOfNearestPoints.Dispose();
+		distances.Dispose();
+		closestDistances.Dispose();
 	}
 }
 
