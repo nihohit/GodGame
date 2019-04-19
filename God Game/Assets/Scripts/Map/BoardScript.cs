@@ -243,8 +243,8 @@ public class BoardScript : MonoBehaviour {
 			updateTile(tileToUpdate, direction);
 		} else if (InteractionMode.LowerRaiseTile == interactionMode) {
 			var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
-			var computedValue = slider.value / 2;
-			var lookingRange = (computedValue / Constants.SizeOfTile) + 1;
+			var computedValue = slider.value;
+			var lookingRange = slider.value + 1;
 			var deltaTime = Time.deltaTime;
 
 			var jobs = new List<ComputeVertices>();
