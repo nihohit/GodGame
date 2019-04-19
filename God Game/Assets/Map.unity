@@ -298,8 +298,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   heightChangeRate: 2
-  x: 10
-  z: 10
+  x: 20
+  z: 20
   flatten: 0
   changeHeight: 0
   slider: {fileID: 929961586}
