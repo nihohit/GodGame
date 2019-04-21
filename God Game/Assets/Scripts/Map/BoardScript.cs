@@ -27,6 +27,9 @@ public class BoardScript : MonoBehaviour {
 	private NativeArray<JobHandle> adjustVerticesHandles;
 	private NativeArray<float> cornerHeights;
 	private NativeArray<float> centerHeights;
+	private List<ComputeVertices> jobs = new List<ComputeVertices>();
+	private JobHandle[] tileRaisingJobs;
+	private JobHandle[] childMovingJobs;
 
 	public void OnDestroy() {
 		adjustVerticesHandles.Dispose();
@@ -37,6 +40,9 @@ public class BoardScript : MonoBehaviour {
 	// Use this for initialization
 	void Start() {
 		adjustVerticesHandles = new NativeArray<JobHandle>(9, Allocator.Persistent);
+		var numberOfPotentialJobs = (int)math.pow(((slider.maxValue + 1) * 2) + 1, 2);
+		tileRaisingJobs = new JobHandle[numberOfPotentialJobs];
+		childMovingJobs = new JobHandle[numberOfPotentialJobs];
 		cornerHeights = new NativeArray<float>((x + 1) * (z + 1), Allocator.Persistent);
 		centerHeights = new NativeArray<float>(x * z, Allocator.Persistent);
 		initializeTiles();
@@ -225,6 +231,7 @@ public class BoardScript : MonoBehaviour {
 		}
 
 		var hitPoint = hit.Value.point;
+		float3 hitPointasFloat = hitPoint;
 		projector.transform.position = hitPoint + (Vector3.up * slider.value);
 		projector.SetActive(true);
 		var currentHeightChangeRate = heightChangeRate * Constants.SizeOfTile;
@@ -247,9 +254,8 @@ public class BoardScript : MonoBehaviour {
 			var lookingRange = slider.value + 1;
 			var deltaTime = Time.deltaTime;
 
-			var jobs = new List<ComputeVertices>();
-			var tileRaisingJobs = new List<JobHandle>();
-			var childMovingJobs = new List<JobHandle>();
+			jobs.Clear();
+			int length = 0;
 			var adjustedX = hitPoint.x / Constants.SizeOfTile;
 			var adjustedZ = hitPoint.z / Constants.SizeOfTile;
 
@@ -263,10 +269,6 @@ public class BoardScript : MonoBehaviour {
 					var zIndex = j + z;
 					var tile = tileScripts[xIndex, zIndex];
 
-					var vertices = tile.vertices;
-					for (int index = 0; index < Constants.NumberOfVerticesInTile; index++) {
-						tile.nativeVertices[index] = vertices[index].ToSlim();
-					}
 
 					var job = new ComputeVertices {
 						HitPoint = hitPoint - tile.transform.position,
@@ -279,20 +281,25 @@ public class BoardScript : MonoBehaviour {
 						heightChangeRate = currentHeightChangeRate
 					};
 					var handle = job.Schedule();
-					tileRaisingJobs.Add(handle);
+					tileRaisingJobs[length] = handle;
 					jobs.Add(job);
-					childMovingJobs.Add(TileScript.adjustChildrenLocation(tile, handle));
+					childMovingJobs[length] = TileScript.adjustChildrenLocation(tile, handle);
+					length++;
 				}
 			}
 
 			var newVertices = new List<Vector3>(Constants.NumberOfVerticesInTile);
 			var populated = false;
-			var nativeHandles = new NativeArray<JobHandle>(tileRaisingJobs.ToArray(), Allocator.Temp);
+			var nativeHandles = new NativeArray<JobHandle>(length, Allocator.Temp);
+			for (int i = 0; i < length; i++) {
+				nativeHandles[i] = tileRaisingJobs[i];
+			}
 			JobHandle.CompleteAll(nativeHandles);
-			foreach (var job in jobs) {
+			for (int i = 0; i < length; i++) {
+				var job = jobs[i];
 				var tile = tileScripts[job.xCoord, job.yCoord];
 				if (populated) {
-					for (int i = 0; i < job.vertices.Length; i++) {
+					for (int j = 0; j < job.vertices.Length; j++) {
 						//TODO - understand why this doesn't work, and then set populated.
 						job.vertices[i].CopyToVector(newVertices[i]);
 					}
@@ -304,7 +311,10 @@ public class BoardScript : MonoBehaviour {
 				tile.vertices = newVertices;
 			}
 
-			nativeHandles.CopyFrom(childMovingJobs.ToArray());
+
+			for (int i = 0; i < length; i++) {
+				nativeHandles[i] = childMovingJobs[i];
+			}
 			JobHandle.CompleteAll(nativeHandles);
 
 			nativeHandles.Dispose();

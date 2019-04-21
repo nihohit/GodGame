@@ -167,7 +167,11 @@ public class TileScript: MonoBehaviour {
       2, 3, 4
      };
     internalMesh = mesh;
-  }
+
+		for (int index = 0; index < Constants.NumberOfVerticesInTile; index++) {
+			nativeVertices[index] = vertices[index].ToSlim();
+		}
+	}
 
   static public IEnumerable<Vector3> transformedVectorsWithDistance(List<Vector3> vertices, Vector3 source, Func<Vector3, float, Vector3> vectorAndDistanceToVector) {
     return vertices.Select(vertex => {
