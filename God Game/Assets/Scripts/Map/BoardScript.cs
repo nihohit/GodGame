@@ -25,6 +25,8 @@ public class BoardScript : MonoBehaviour {
 	private GameObject[] treePrefabs;
 	private bool ignoreTreeAddition;
 	private NativeArray<JobHandle> adjustVerticesHandles;
+	private NativeArray<bool>[] changeIndicators;
+	private NativeArray<bool> constantChangeIndicator;
 	private NativeArray<float> cornerHeights;
 	private NativeArray<float> centerHeights;
 	private List<ComputeVertices> jobs = new List<ComputeVertices>();
@@ -33,16 +35,25 @@ public class BoardScript : MonoBehaviour {
 
 	public void OnDestroy() {
 		adjustVerticesHandles.Dispose();
+		constantChangeIndicator.Dispose();
 		cornerHeights.Dispose();
 		centerHeights.Dispose();
+		foreach(var array in changeIndicators) {
+			array.Dispose();
+		}
 	}
 
 	// Use this for initialization
 	void Start() {
 		adjustVerticesHandles = new NativeArray<JobHandle>(9, Allocator.Persistent);
-		var numberOfPotentialJobs = (int)math.pow(((slider.maxValue + 1) * 2) + 1, 2);
+		var numberOfPotentialJobs = (int)math.pow(((slider.maxValue) * 2) + 1, 2);
 		tileRaisingJobs = new JobHandle[numberOfPotentialJobs];
 		childMovingJobs = new JobHandle[numberOfPotentialJobs];
+		changeIndicators = Enumerable.Range(0, numberOfPotentialJobs)
+			.Select(_ => new NativeArray<bool>(1, Allocator.Persistent))
+			.ToArray();
+		constantChangeIndicator = new NativeArray<bool>(1, Allocator.Persistent);
+		constantChangeIndicator[0] = true;
 		cornerHeights = new NativeArray<float>((x + 1) * (z + 1), Allocator.Persistent);
 		centerHeights = new NativeArray<float>(x * z, Allocator.Persistent);
 		initializeTiles();
@@ -251,7 +262,7 @@ public class BoardScript : MonoBehaviour {
 		} else if (InteractionMode.LowerRaiseTile == interactionMode) {
 			var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
 			var computedValue = slider.value;
-			var lookingRange = slider.value + 1;
+			var lookingRange = slider.value;
 			var deltaTime = Time.deltaTime;
 
 			jobs.Clear();
@@ -269,7 +280,6 @@ public class BoardScript : MonoBehaviour {
 					var zIndex = j + z;
 					var tile = tileScripts[xIndex, zIndex];
 
-
 					var job = new ComputeVertices {
 						HitPoint = hitPointasFloat - tile.Position,
 						computedValue = computedValue,
@@ -278,12 +288,13 @@ public class BoardScript : MonoBehaviour {
 						xCoord = xIndex,
 						yCoord = zIndex,
 						vertices = tile.nativeVertices,
-						heightChangeRate = currentHeightChangeRate
+						heightChangeRate = currentHeightChangeRate,
+						wasChanged = changeIndicators[length]
 					};
 					var handle = job.Schedule();
 					tileRaisingJobs[length] = handle;
 					jobs.Add(job);
-					childMovingJobs[length] = TileScript.adjustChildrenLocation(tile, handle);
+					childMovingJobs[length] = TileScript.adjustChildrenLocation(tile, handle, changeIndicators[length]);
 					length++;
 				}
 			}
@@ -296,6 +307,9 @@ public class BoardScript : MonoBehaviour {
 			}
 			JobHandle.CompleteAll(nativeHandles);
 			for (int i = 0; i < length; i++) {
+				if (!changeIndicators[i][0]) {
+					continue;
+				}
 				var job = jobs[i];
 				var tile = tileScripts[job.xCoord, job.yCoord];
 				if (populated) {
@@ -311,12 +325,10 @@ public class BoardScript : MonoBehaviour {
 				tile.vertices = newVertices;
 			}
 
-
 			for (int i = 0; i < length; i++) {
 				nativeHandles[i] = childMovingJobs[i];
 			}
 			JobHandle.CompleteAll(nativeHandles);
-
 			nativeHandles.Dispose();
 		}
 	}
@@ -346,13 +358,18 @@ public class BoardScript : MonoBehaviour {
 		[ReadOnly]
 		public float heightChangeRate;
 
+		[WriteOnly]
+		public NativeSlice<bool> wasChanged;
+
 		public void Execute() {
+			wasChanged[0] = false;
 			for (var i = 0; i < vertices.Length; i++) {
 				var vertex = vertices[i];
-				var distance = math.distance(vertex, HitPoint);
+				var distance = math.distance(vertex, HitPoint) / Constants.SizeOfTile;
 				if (distance > computedValue) {
 					continue;
 				}
+				wasChanged[0] = true;
 				var intensity = math.cos(distance / computedValue) * heightChangeRate;
 				vertices[i] = vertex + (actionDirection * intensity * deltaTime);
 			}
@@ -370,18 +387,21 @@ public class BoardScript : MonoBehaviour {
 
 	public void updateTile(TileScript tile, TileUpdateDirection direction) {
 		float change = heightChangeRate * Time.deltaTime * Constants.SizeOfTile;
-		BoardScript.adjustVertices(tile, change, interactionMode, direction, adjustVerticesHandles);
+		BoardScript.adjustVertices(tile, change, interactionMode, direction, adjustVerticesHandles, constantChangeIndicator);
 	}
 
-	public static void adjustVertices(TileScript tile, float changeRate, InteractionMode type, TileUpdateDirection direction, NativeArray<JobHandle> adjustVerticesHandles) {
+	public static void adjustVertices(TileScript tile, float changeRate, InteractionMode type, TileUpdateDirection direction, NativeArray<JobHandle> adjustVerticesHandles, NativeArray<bool> changeIndicator) {
 		var newVertices = type == InteractionMode.LowerRaiseTile ? raisedVertices(tile, changeRate, direction) :
 				flattenVertices(tile, changeRate, direction);
+
+		var changeSlice = changeIndicator.Slice(0, 1);
 		int count = 0;
 		foreach (var neighbour in tile.neighbours) {
 			var offset = tile.transform.position - neighbour.transform.position;
 			var offsetedVertices = newVertices.Select(vertex => vertex + offset).ToList();
 			neighbour.vertices = TileScript.adjustedVertices(neighbour.vertices, offsetedVertices);
-			adjustVerticesHandles[count] = TileScript.adjustChildrenLocation(neighbour, default(JobHandle));
+			
+			adjustVerticesHandles[count] = TileScript.adjustChildrenLocation(neighbour, default(JobHandle), changeSlice);
 			count++;
 		}
 

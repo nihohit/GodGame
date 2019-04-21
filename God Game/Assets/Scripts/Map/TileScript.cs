@@ -18,8 +18,14 @@ public struct AdjustChildrenJob: IJobParallelForTransform {
 	[ReadOnly]
 	public NativeArray<float3> normals;
 
+	[ReadOnly]
+	public NativeSlice<bool> wasChanged;
+
 	[BurstCompile]
 	public void Execute(int runIndex, TransformAccess child) {
+		if (!wasChanged[0]) {
+			return;
+		}
 		var positionWithoutHeight = math.float3(child.localPosition.x, 0, child.localPosition.z) ;
 
 		var distances = new NativeArray<float>(Constants.NumberOfVerticesInTile, Allocator.Temp);
@@ -228,7 +234,7 @@ public class TileScript: MonoBehaviour {
     return corners.Aggregate((sum, corner) => sum + corner) / 4;
   }
 
-  public static JobHandle adjustChildrenLocation(TileScript tile, JobHandle dependency) {
+	public static JobHandle adjustChildrenLocation(TileScript tile, JobHandle dependency, NativeSlice<bool> changeIndicator) {
 		var childCount = tile.transform.childCount;
 		for (int i = 0; i < tile.transforms.length; i++) {
 			tile.transforms.RemoveAtSwapBack(0);
@@ -240,7 +246,8 @@ public class TileScript: MonoBehaviour {
 		tile.normals.ConvertInto(tile.nativeNormals);
 		var adjustLocationJob = new AdjustChildrenJob {
 			vertices = tile.nativeVertices,
-			normals = tile.nativeNormals
+			normals = tile.nativeNormals,
+			wasChanged = changeIndicator
 		};
 		return adjustLocationJob.Schedule(tile.transforms, dependency);
 	}

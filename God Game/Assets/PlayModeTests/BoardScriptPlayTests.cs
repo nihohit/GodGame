@@ -54,7 +54,9 @@ public class BoardScriptPlayTests : IPrebuildSetup {
 
 		var handles = new NativeArray<JobHandle>(9, Allocator.Temp);
 
-				BoardScript.adjustVertices(tile1, 10, InteractionMode.LowerRaiseTile, TileUpdateDirection.Up, handles);
+		var array = new NativeArray<bool>(1, Allocator.TempJob);
+		array[0] = true;
+				BoardScript.adjustVertices(tile1, 10, InteractionMode.LowerRaiseTile, TileUpdateDirection.Up, handles, array);
 		handles.Dispose();
 
         var expectedVertices = new List<Vector3>{
@@ -88,7 +90,9 @@ public class BoardScriptPlayTests : IPrebuildSetup {
         CollectionAssert.AreEqual(expectedVertices, tile3.vertices);
 
         cleanObjects();
-    }
+		array.Dispose();
+
+		}
 
     [UnityTest]
     public IEnumerator Board_InitializesChildren() {
