@@ -46,7 +46,7 @@ public class BoardScript : MonoBehaviour {
 	// Use this for initialization
 	void Start() {
 		adjustVerticesHandles = new NativeArray<JobHandle>(9, Allocator.Persistent);
-		var numberOfPotentialJobs = (int)math.pow(((slider.maxValue) * 2) + 1, 2);
+		var numberOfPotentialJobs = (int)math.pow(((slider.maxValue + 1) * 2) + 1, 2);
 		tileRaisingJobs = new JobHandle[numberOfPotentialJobs];
 		childMovingJobs = new JobHandle[numberOfPotentialJobs];
 		changeIndicators = Enumerable.Range(0, numberOfPotentialJobs)
@@ -262,7 +262,7 @@ public class BoardScript : MonoBehaviour {
 		} else if (InteractionMode.LowerRaiseTile == interactionMode) {
 			var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
 			var computedValue = slider.value;
-			var lookingRange = slider.value;
+			var lookingRange = slider.value + 1;
 			var deltaTime = Time.deltaTime;
 
 			jobs.Clear();
