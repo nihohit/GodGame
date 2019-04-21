@@ -271,7 +271,7 @@ public class BoardScript : MonoBehaviour {
 
 
 					var job = new ComputeVertices {
-						HitPoint = hitPoint - tile.transform.position,
+						HitPoint = hitPointasFloat - tile.Position,
 						computedValue = computedValue,
 						deltaTime = deltaTime,
 						actionDirection = actionDirection,

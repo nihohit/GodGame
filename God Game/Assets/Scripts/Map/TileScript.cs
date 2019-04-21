@@ -83,6 +83,7 @@ public class TileScript: MonoBehaviour {
 	public NativeArray<float3> nativeVertices;
 	public NativeArray<float3> nativeNormals;
 	public TransformAccessArray transforms;
+	public float3 Position;
 
 	public IEnumerable<TileScript> directNeighbours { get; set; }
 
@@ -171,6 +172,7 @@ public class TileScript: MonoBehaviour {
 		for (int index = 0; index < Constants.NumberOfVerticesInTile; index++) {
 			nativeVertices[index] = vertices[index].ToSlim();
 		}
+		Position = transform.position;
 	}
 
   static public IEnumerable<Vector3> transformedVectorsWithDistance(List<Vector3> vertices, Vector3 source, Func<Vector3, float, Vector3> vectorAndDistanceToVector) {
