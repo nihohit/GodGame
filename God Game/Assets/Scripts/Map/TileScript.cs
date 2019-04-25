@@ -12,86 +12,86 @@ using Unity.Burst;
 using Unity.Jobs;
 
 [BurstCompile]
-public struct AdjustChildrenJob: IJobParallelForTransform {
-	[ReadOnly]
-	public NativeArray<float3> vertices;
-	[ReadOnly]
-	public NativeArray<float3> normals;
+public struct AdjustChildrenJob : IJobParallelForTransform {
+  [ReadOnly]
+  public NativeArray<float3> vertices;
+  [ReadOnly]
+  public NativeArray<float3> normals;
 
-	[ReadOnly]
-	public NativeSlice<bool> wasChanged;
+  [ReadOnly]
+  public NativeSlice<bool> wasChanged;
 
-	[BurstCompile]
-	public void Execute(int runIndex, TransformAccess child) {
-		if (!wasChanged[0]) {
-			return;
-		}
-		var positionWithoutHeight = math.float3(child.localPosition.x, 0, child.localPosition.z) ;
+  [BurstCompile]
+  public void Execute(int runIndex, TransformAccess child) {
+    if (!wasChanged[0]) {
+      return;
+    }
+    var positionWithoutHeight = math.float3(child.localPosition.x, 0, child.localPosition.z);
 
-		var distances = new NativeArray<float>(Constants.NumberOfVerticesInTile, Allocator.Temp);
+    var distances = new NativeArray<float>(Constants.NumberOfVerticesInTile, Allocator.Temp);
 
-		var closestDistances = new NativeArray<float>(3, Allocator.Temp);
-		closestDistances[0] = 1000f;
-		closestDistances[1] = 1000f;
-		closestDistances[2] = 1000f;
-		var indicesOfNearestPoints = new NativeArray<int>(3, Allocator.Temp);
-		for (int i = 0; i < Constants.NumberOfVerticesInTile; i++) {
-			var vertex = vertices[i];
-			vertex.y = 0;
-			var distance = math.distance(vertex, positionWithoutHeight);
-			distances[i] = distance;
-			if (distance < closestDistances[0]) {
-				closestDistances[2] = closestDistances[1];
-				closestDistances[1] = closestDistances[0];
-				closestDistances[0] = distance;
-				indicesOfNearestPoints[2] = indicesOfNearestPoints[1];
-				indicesOfNearestPoints[1] = indicesOfNearestPoints[0];
-				indicesOfNearestPoints[0] = i;
-			} else if (distance < closestDistances[1]) {
-				closestDistances[2] = closestDistances[1];
-				closestDistances[1] = distance;
-				indicesOfNearestPoints[2] = indicesOfNearestPoints[1];
-				indicesOfNearestPoints[1] = i;
-			} else if (distance < closestDistances[2]) {
-				closestDistances[2] = distance;
-				indicesOfNearestPoints[2] = i;
-			}
-		}
+    var closestDistances = new NativeArray<float>(3, Allocator.Temp);
+    closestDistances[0] = 1000f;
+    closestDistances[1] = 1000f;
+    closestDistances[2] = 1000f;
+    var indicesOfNearestPoints = new NativeArray<int>(3, Allocator.Temp);
+    for (int i = 0; i < Constants.NumberOfVerticesInTile; i++) {
+      var vertex = vertices[i];
+      vertex.y = 0;
+      var distance = math.distance(vertex, positionWithoutHeight);
+      distances[i] = distance;
+      if (distance < closestDistances[0]) {
+        closestDistances[2] = closestDistances[1];
+        closestDistances[1] = closestDistances[0];
+        closestDistances[0] = distance;
+        indicesOfNearestPoints[2] = indicesOfNearestPoints[1];
+        indicesOfNearestPoints[1] = indicesOfNearestPoints[0];
+        indicesOfNearestPoints[0] = i;
+      } else if (distance < closestDistances[1]) {
+        closestDistances[2] = closestDistances[1];
+        closestDistances[1] = distance;
+        indicesOfNearestPoints[2] = indicesOfNearestPoints[1];
+        indicesOfNearestPoints[1] = i;
+      } else if (distance < closestDistances[2]) {
+        closestDistances[2] = distance;
+        indicesOfNearestPoints[2] = i;
+      }
+    }
 
-		var newHeight = 0f;
-		var newNormal = math.float3(0);
-		var sumOfDistances = 0f;
+    var newHeight = 0f;
+    var newNormal = math.float3(0);
+    var sumOfDistances = 0f;
 
 
-		for (int i = 0; i < indicesOfNearestPoints.Length; i++) {
-			var index = indicesOfNearestPoints[i];
-			var distanceAsWeight = 1f / distances[index];
-			sumOfDistances += distanceAsWeight;
-			newHeight += vertices[index].y * distanceAsWeight;
-			newNormal += normals[index] * distanceAsWeight;
-		}
+    for (int i = 0; i < indicesOfNearestPoints.Length; i++) {
+      var index = indicesOfNearestPoints[i];
+      var distanceAsWeight = 1f / distances[index];
+      sumOfDistances += distanceAsWeight;
+      newHeight += vertices[index].y * distanceAsWeight;
+      newNormal += normals[index] * distanceAsWeight;
+    }
 
-		child.localPosition = new Vector3(positionWithoutHeight.x, newHeight / sumOfDistances, positionWithoutHeight.z);
-		var groundNormal = newNormal / sumOfDistances;
-		var right = child.rotation * Vector3.right;
-		Vector3 forwardsVector = -Vector3.Cross(groundNormal, right);
-		child.localRotation = Quaternion.LookRotation(forwardsVector, groundNormal);
-		indicesOfNearestPoints.Dispose();
-		distances.Dispose();
-		closestDistances.Dispose();
-	}
+    child.localPosition = new Vector3(positionWithoutHeight.x, newHeight / sumOfDistances, positionWithoutHeight.z);
+    var groundNormal = newNormal / sumOfDistances;
+    var right = child.rotation * Vector3.right;
+    Vector3 forwardsVector = -Vector3.Cross(groundNormal, right);
+    child.localRotation = Quaternion.LookRotation(forwardsVector, groundNormal);
+    indicesOfNearestPoints.Dispose();
+    distances.Dispose();
+    closestDistances.Dispose();
+  }
 }
 
-public class TileScript: MonoBehaviour {
-	private readonly List<Vector3> internalVertices = new List<Vector3>(Constants.NumberOfVerticesInTile);
-	private readonly List<Vector3> internalNormals = new List<Vector3>();
+public class TileScript : MonoBehaviour {
+  private readonly List<Vector3> internalVertices = new List<Vector3>(Constants.NumberOfVerticesInTile);
+  private readonly List<Vector3> internalNormals = new List<Vector3>();
 
-	public NativeArray<float3> nativeVertices;
-	public NativeArray<float3> nativeNormals;
-	public TransformAccessArray transforms;
-	public float3 Position;
+  public NativeArray<float3> nativeVertices;
+  public NativeArray<float3> nativeNormals;
+  public TransformAccessArray transforms;
+  public float3 Position;
 
-	public IEnumerable<TileScript> directNeighbours { get; set; }
+  public IEnumerable<TileScript> directNeighbours { get; set; }
 
   public IEnumerable<TileScript> indirectNeighbours { get; set; }
 
@@ -109,8 +109,8 @@ public class TileScript: MonoBehaviour {
       return meshFilter.mesh;
     }
     set {
-			internalNormals.Clear();
-			internalVertices.Clear();
+      internalNormals.Clear();
+      internalVertices.Clear();
       value.RecalculateNormals();
       meshFilter.mesh = value;
       meshCollider.sharedMesh = value;
@@ -119,35 +119,35 @@ public class TileScript: MonoBehaviour {
 
   public List<Vector3> vertices {
     get {
-			if (internalVertices.Count == 0) {
-				internalMesh.GetVertices(internalVertices);
-			}
+      if (internalVertices.Count == 0) {
+        internalMesh.GetVertices(internalVertices);
+      }
       return internalVertices;
     }
 
     set {
-			internalVertices.AddRange(value);
-			internalMesh.SetVertices(value);
+      internalVertices.AddRange(value);
+      internalMesh.SetVertices(value);
       internalMesh = internalMesh;
     }
   }
 
-	public List<Vector3> normals {
-		get {
-			if (internalNormals.Count == 0) {
-				internalMesh.GetNormals(internalNormals);
-			}
-			return internalNormals;
-		}
-	}
+  public List<Vector3> normals {
+    get {
+      if (internalNormals.Count == 0) {
+        internalMesh.GetNormals(internalNormals);
+      }
+      return internalNormals;
+    }
+  }
 
   private void Awake() {
     meshFilter = GetComponent<MeshFilter>();
     meshCollider = GetComponent<MeshCollider>();
-		nativeVertices = new NativeArray<float3>(Constants.NumberOfVerticesInTile, Allocator.Persistent);
-		nativeNormals = new NativeArray<float3>(Constants.NumberOfVerticesInTile, Allocator.Persistent);
-		transforms = new TransformAccessArray(9);
-}
+    nativeVertices = new NativeArray<float3>(Constants.NumberOfVerticesInTile, Allocator.Persistent);
+    nativeNormals = new NativeArray<float3>(Constants.NumberOfVerticesInTile, Allocator.Persistent);
+    transforms = new TransformAccessArray(9);
+  }
 
   // Use this for initialization
   void Start() {
@@ -175,11 +175,11 @@ public class TileScript: MonoBehaviour {
      };
     internalMesh = mesh;
 
-		for (int index = 0; index < Constants.NumberOfVerticesInTile; index++) {
-			nativeVertices[index] = vertices[index].ToSlim();
-		}
-		Position = transform.position;
-	}
+    for (int index = 0; index < Constants.NumberOfVerticesInTile; index++) {
+      nativeVertices[index] = vertices[index].ToSlim();
+    }
+    Position = transform.position;
+  }
 
   static public IEnumerable<Vector3> transformedVectorsWithDistance(List<Vector3> vertices, Vector3 source, Func<Vector3, float, Vector3> vectorAndDistanceToVector) {
     return vertices.Select(vertex => {
@@ -234,27 +234,28 @@ public class TileScript: MonoBehaviour {
     return corners.Aggregate((sum, corner) => sum + corner) / 4;
   }
 
-	public static JobHandle adjustChildrenLocation(TileScript tile, JobHandle dependency, NativeSlice<bool> changeIndicator) {
-		var childCount = tile.transform.childCount;
-		for (int i = 0; i < tile.transforms.length; i++) {
-			tile.transforms.RemoveAtSwapBack(0);
-		}
-		for (int i = 0; i < childCount; i++) {
-			tile.transforms.Add(tile.transform.GetChild(i));
-		}
+  public static JobHandle adjustChildrenLocation(TileScript tile, JobHandle dependency, NativeSlice<bool> changeIndicator) {
+    var childCount = tile.transform.childCount;
+    for (int i = 0; i < tile.transforms.length; i++) {
+      tile.transforms.RemoveAtSwapBack(0);
+    }
+    for (int i = 0; i < childCount; i++) {
+      tile.transforms.Add(tile.transform.GetChild(i));
+    }
 
-		tile.normals.ConvertInto(tile.nativeNormals);
-		var adjustLocationJob = new AdjustChildrenJob {
-			vertices = tile.nativeVertices,
-			normals = tile.nativeNormals,
-			wasChanged = changeIndicator
-		};
-		return adjustLocationJob.Schedule(tile.transforms, dependency);
-	}
+    tile.normals.ConvertInto(tile.nativeNormals);
+    var adjustLocationJob = new AdjustChildrenJob
+    {
+      vertices = tile.nativeVertices,
+      normals = tile.nativeNormals,
+      wasChanged = changeIndicator
+    };
+    return adjustLocationJob.Schedule(tile.transforms, dependency);
+  }
 
-	public void OnDestroy() {
-		nativeNormals.Dispose();
-		nativeVertices.Dispose();
-		transforms.Dispose();
-	}
+  public void OnDestroy() {
+    nativeNormals.Dispose();
+    nativeVertices.Dispose();
+    transforms.Dispose();
+  }
 }

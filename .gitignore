@@ -55,3 +55,4 @@ God Game/\.vscode/
 /God Game/.vs/
 /God Game/Logs/IncrementalCompiler
 /God/unity_incremental_compiler_server.log
+/God Game/Assets/EntityCache/Resources.meta

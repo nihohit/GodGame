@@ -2,13 +2,15 @@
 using UnityEngine;
 using System.Linq;
 
-public class TerrainObjectScript: MonoBehaviour {
+public class TerrainObjectScript : MonoBehaviour {
   private readonly float kMaxAngle = 45;
 
   private bool temporaryObject;
-  public bool TemporaryObject { get {
+  public bool TemporaryObject {
+    get {
       return temporaryObject;
-    } set {
+    }
+    set {
       temporaryObject = value;
       collidingObjects = value ? new List<GameObject>() : null;
       gameObject.GetComponent<Collider>().isTrigger = value;
@@ -103,7 +105,7 @@ public class TerrainObjectScript: MonoBehaviour {
   }
 
   public void RemoveCollidingObjects() {
-    foreach(var obj in collidingObjects) {
+    foreach (var obj in collidingObjects) {
       Destroy(obj);
     }
     collidingObjects.Clear();
