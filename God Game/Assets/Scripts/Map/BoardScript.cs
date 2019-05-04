@@ -299,17 +299,22 @@ public class BoardScript : MonoBehaviour {
       var populated = false;
       handle.Complete();
 
+      for (int i = minX; i < maxX; i++) {
+        for (int j = minZ; j < maxZ; j++) {
+          var xIndex = i + x;
+          var zIndex = j + z;
+          var tile = tileScripts[xIndex, zIndex];
+          var center =
+          childMovingJobs[length] = TileScript.adjustChildrenLocation(tile, handle);
+
+          job.vertices.ConvertInto(newVertices);
+          length++;
+        }
+      };
       for (int i = 0; i < length; i++) {
         var tile = tileScripts[job.xCoord, job.yCoord];
-        if (populated) {
-          for (int j = 0; j < job.vertices.Length; j++) {
-            //TODO - understand why this doesn't work, and then set populated.
-            job.vertices[i].CopyToVector(newVertices[i]);
-          }
-        } else {
-          job.vertices.ConvertInto(newVertices);
-          //populated = true;
-        }
+
+
 
         tile.vertices = newVertices;
       }
