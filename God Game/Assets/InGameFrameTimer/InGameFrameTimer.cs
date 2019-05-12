@@ -1,13 +1,13 @@
 ﻿using System;
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 public class InGameFrameTimer : MonoBehaviour {
 
-    private Material _mat;
+    public Material mat;
     private readonly List<Vector3> _startPos = new List<Vector3>();
     private readonly List<Vector3> _middlePos = new List<Vector3>();
     private readonly List<Vector3> _stopPos = new List<Vector3>();
@@ -38,12 +38,11 @@ public class InGameFrameTimer : MonoBehaviour {
 
         if (SetTargetFpsToDoubleMonitorHz) {
             Application.targetFrameRate = _currentRefreshRate * 2;
-        }
-        else {
+        } else {
             Application.targetFrameRate = 2000;
         }
 
-        _mat = new Material("Shader \"Lines/Colored Blended\" {" + "SubShader {Tags { \"RenderType\"=\"Opaque\" } Pass { " + "ZWrite On ZTest LEqual Cull Off Fog { Mode Off } " + "BindChannels {" + "Bind \"vertex\", vertex Bind \"color\", color }" + "} } }");
+        //mat = new Material("Shader \"Lines/Colored Blended\" {" + "SubShader {Tags { \"RenderType\"=\"Opaque\" } Pass { " + "ZWrite On ZTest LEqual Cull Off Fog { Mode Off } " + "BindChannels {" + "Bind \"vertex\", vertex Bind \"color\", color }" + "} } }");
 
     }
 
@@ -64,7 +63,6 @@ public class InGameFrameTimer : MonoBehaviour {
             }
         }
     }
-
 
     void Update() {
         if (Input.GetKeyDown(KeyCode.F2)) {
@@ -89,21 +87,18 @@ public class InGameFrameTimer : MonoBehaviour {
             }
         }
 
-
         _memUsed = GC.GetTotalMemory(false);
         if (_memUsed < _lastGcAmount) {
-            int lastGcRemovedAmount = (int)((_lastGcAmount - _memUsed) / 1000000);
+            int lastGcRemovedAmount = (int) ((_lastGcAmount - _memUsed) / 1000000);
             if (ShowGcCollectedAmount) {
                 _gcCollected.Add(lastGcRemovedAmount);
                 _gcCollectedPosX.Add(GraphLength);
             }
             _gcRanThatFrame.Add(true);
-        }
-        else {
+        } else {
             _gcRanThatFrame.Add(false);
         }
         _lastGcAmount = _memUsed;
-
 
         float width = Screen.width;
         float height = Screen.height;
@@ -134,7 +129,7 @@ public class InGameFrameTimer : MonoBehaviour {
         float heigth = Screen.height;
 
         GL.PushMatrix();
-        _mat.SetPass(0);
+        mat.SetPass(0);
         GL.LoadOrtho();
         GL.Begin(GL.LINES);
 
@@ -148,8 +143,7 @@ public class InGameFrameTimer : MonoBehaviour {
             if (_gcRanThatFrame[i]) {
                 blueColor = Color.magenta;
                 greenColor = Color.magenta;
-            }
-            else {
+            } else {
                 blueColor = Color.blue;
                 greenColor = Color.green;
             }
@@ -184,7 +178,7 @@ public class InGameFrameTimer : MonoBehaviour {
         GL.PopMatrix();
 
         _renderTime.Stop();
-        _renderTimeLastFrame = (float)_renderTime.Elapsed.TotalMilliseconds;
+        _renderTimeLastFrame = (float) _renderTime.Elapsed.TotalMilliseconds;
         _renderTime.Reset();
 
     }
@@ -196,10 +190,5 @@ public class InGameFrameTimer : MonoBehaviour {
         GUI.color = oldColor;
         GUI.Label(new Rect(rect.x, rect.y, rect.width, rect.height), s);
     }
-
-
-
-
-
 
 }

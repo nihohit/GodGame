@@ -87,6 +87,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a6353c44ec4a094f9f8ac62f0720673, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mat: {fileID: 2100000, guid: 4bd3f5d7abc7ded46a1614e56a24a0c6, type: 2}
   BottomLeftPosX: 10
   BottomLeftPosY: 20
   GraphLength: 200
