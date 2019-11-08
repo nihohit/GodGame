@@ -16,6 +16,7 @@ public class BoardScript : MonoBehaviour {
   public bool flatten, changeHeight;
   public Slider slider;
   public GameObject projector;
+  public GameObject freedObjectsParent;
 
   private TileScript[,] tileScripts;
   private GameObject[,] tiles;
@@ -32,6 +33,9 @@ public class BoardScript : MonoBehaviour {
   private List<ComputeVertices> jobs = new List<ComputeVertices>();
   private JobHandle[] tileRaisingJobs;
   private JobHandle[] childMovingJobs;
+  private List<TerrainObjectScript> connectedObjects = new List<TerrainObjectScript>();
+  private List<int> objectsIndices = new List<int>();
+  private List<TerrainObjectScript> freedObjects = new List<TerrainObjectScript>();
 
   public void OnDestroy() {
     adjustVerticesHandles.Dispose();
@@ -76,7 +80,7 @@ public class BoardScript : MonoBehaviour {
         tile.transform.parent = transform;
 
         var tree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero);
-        tree.transform.parent = tile.transform;
+        connectObject(tree.GetComponent<TerrainObjectScript>(), tile);
         tree.transform.localPosition = new Vector3((float)Randomizer.NextDouble(-halfSize, halfSize), 0, (float)Randomizer.NextDouble(-halfSize, halfSize));
         randomRotationAndScale(tree.transform);
       }
@@ -146,8 +150,92 @@ public class BoardScript : MonoBehaviour {
     } else {
       handleTileInteraction();
     }
+
+    removeObjectsMarkedForDestruction();
+    disconnectTiltedObjects();
+    removeOutOfBoundsObjects();
+    colorCurrentTree();
   }
 
+  private void removeObjectsMarkedForDestruction() {
+    for (int i = 0; i < connectedObjects.Count; ++i) {
+      if (connectedObjects[i].markedForDestruction) {
+        objectsIndices.Add(i);
+      }
+    }
+
+    for (int i = objectsIndices.Count - 1; i >= 0; --i) {
+      var index = objectsIndices[i];
+      GameObject.Destroy(connectedObjects[index].gameObject);
+      connectedObjects.RemoveAt(index);
+    }
+
+    objectsIndices.Clear();
+
+    for (int i = 0; i < freedObjects.Count; ++i) {
+      if (freedObjects[i].markedForDestruction) {
+        objectsIndices.Add(i);
+      }
+    }
+
+    for (int i = objectsIndices.Count - 1; i >= 0; --i) {
+      var index = objectsIndices[i];
+      GameObject.Destroy(freedObjects[index].gameObject);
+      freedObjects.RemoveAt(index);
+    }
+
+    objectsIndices.Clear();
+  }
+
+  private void connectObject(TerrainObjectScript obj, GameObject tile) {
+    connectedObjects.Add(obj);
+    obj.transform.parent = tile.transform;
+  }
+
+  private void disconnectTiltedObjects() {
+    for (int i = 0; i < connectedObjects.Count; ++i) {
+      if (!connectedObjects[i].holdableAngle()) {
+        objectsIndices.Add(i);
+      }
+    }
+
+    for (int i = objectsIndices.Count - 1; i >= 0; --i) {
+      var index = objectsIndices[i];
+      connectedObjects[index].freeObject();
+      freedObjects.Add(connectedObjects[index]);
+      connectedObjects[index].transform.parent = freedObjectsParent.transform;
+      connectedObjects.RemoveAt(index);
+    }
+
+    objectsIndices.Clear();
+  }
+
+  private void removeOutOfBoundsObjects() {
+    for (int i = 0; i < freedObjects.Count; ++i) {
+      if (freedObjects[i].isOutOfPlayableHeight()) {
+        objectsIndices.Add(i);
+      }
+    }
+
+    for (int i = objectsIndices.Count - 1; i >= 0; --i) {
+      var index = objectsIndices[i];
+      var gameObject = freedObjects[index].gameObject;
+      freedObjects.RemoveAt(index);
+      Destroy(gameObject);
+    }
+    objectsIndices.Clear();
+  }
+
+  private void colorCurrentTree() {
+    if (currentTree == null) {
+      return;
+    }
+    if (currentTree.holdableAngle() && !currentTree.isColliding()) {
+      currentTree.setOriginalColors();
+    } else {
+      currentTree.setRedColor();
+    }
+  }
   #region tree interaction
   private void handleTreeInteraction() {
     projector.SetActive(false);
@@ -166,7 +254,7 @@ public class BoardScript : MonoBehaviour {
   }
 
   private void removeExistingTrees() {
-    currentTree.RemoveCollidingObjects();
+    currentTree.MarkCollidingObjectsForDestruction();
   }
 
   private void addCurrentTree(RaycastHit hit) {
@@ -174,10 +262,12 @@ public class BoardScript : MonoBehaviour {
       return;
     }
 
-    TileScript tile = hit.collider.GetComponent<TileScript>();
-    currentTree.transform.parent = tile.transform;
-    currentTree.TemporaryObject = false;
-    foreach (var material in currentTree.GetComponent<Renderer>().materials) {
+    var newTree = currentTree;
+    currentTree = null;
+    connectObject(newTree, hit.collider.gameObject);
+    newTree.TemporaryObject = false;
+    newTree.setOriginalColors();
+    foreach (var material in newTree.GetComponent<Renderer>().materials) {
       var color = material.color;
       color.a = 1f;
       material.color = color;
@@ -203,8 +293,8 @@ public class BoardScript : MonoBehaviour {
   }
 
   public void setAddTree(bool active) {
-    if (!active) {
-      Destroy(currentTree);
+    if (!active && currentTree != null) {
+      Destroy(currentTree.gameObject);
       return;
     }
     createNewTree();
@@ -280,8 +370,7 @@ public class BoardScript : MonoBehaviour {
           var zIndex = j + z;
           var tile = tileScripts[xIndex, zIndex];
 
-          var job = new ComputeVertices
-          {
+          var job = new ComputeVertices {
             HitPoint = hitPointasFloat - tile.Position,
             computedValue = computedValue,
             deltaTime = deltaTime,

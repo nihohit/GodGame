@@ -244,8 +244,7 @@ public class TileScript : MonoBehaviour {
     }
 
     tile.normals.ConvertInto(tile.nativeNormals);
-    var adjustLocationJob = new AdjustChildrenJob
-    {
+    var adjustLocationJob = new AdjustChildrenJob {
       vertices = tile.nativeVertices,
       normals = tile.nativeNormals,
       wasChanged = changeIndicator

@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
+using UnityEngine;
 
 public class TerrainObjectScript : MonoBehaviour {
   private readonly float kMaxAngle = 45;
+  private static int id = 0;
 
   private bool temporaryObject;
   public bool TemporaryObject {
@@ -12,7 +13,7 @@ public class TerrainObjectScript : MonoBehaviour {
     }
     set {
       temporaryObject = value;
-      collidingObjects = value ? new List<GameObject>() : null;
+      collidingObjects = value ? new List<TerrainObjectScript>() : null;
       gameObject.GetComponent<Collider>().isTrigger = value;
       if (value) {
         var body = gameObject.AddComponent<Rigidbody>();
@@ -22,58 +23,58 @@ public class TerrainObjectScript : MonoBehaviour {
       }
     }
   }
+
   private List<Color> originalColors;
-  private List<GameObject> collidingObjects;
+  private List<TerrainObjectScript> collidingObjects;
+  public bool markedForDestruction = false;
 
-  void Update() {
-    if (transform.position.y > Constants.MaxHeight || transform.position.y < Constants.MinHeight) {
-      Destroy(gameObject);
-      return;
-    }
-
-    if (transform.parent == null && !temporaryObject) {
-      return;
-    }
-
-    if (!holdableAngle()) {
-      if (temporaryObject) {
-        setRedColor();
-      } else {
-        TerrainObjectScript.freeObject(transform);
-      }
-    }
+  private void Start() {
+    gameObject.name += ++id;
   }
 
-  public static void freeObject(Transform obj) {
-    obj.parent = null;
-    Rigidbody rigidBody = obj.gameObject.AddComponent<Rigidbody>();
+  private void OnDestroy() {
+    if (collidingObjects == null) {
+      return;
+    }
+    foreach (var obj in collidingObjects) {
+      obj.setOriginalColors();
+    }
+    collidingObjects = null;
+  }
+
+  public void freeObject() {
+    transform.parent = null;
+    Rigidbody rigidBody = gameObject.AddComponent<Rigidbody>();
     rigidBody.mass = 5;
     rigidBody.useGravity = true;
+  }
+
+  public bool isOutOfPlayableHeight() {
+    return transform.position.y > Constants.MaxHeight || transform.position.y < Constants.MinHeight;
   }
 
   private void OnTriggerEnter(Collider other) {
     if (!TemporaryObject || other.gameObject.GetComponent<TerrainObjectScript>() == null) {
       return;
     }
-    if (collidingObjects.Count == 0) {
-      setRedColor();
-    }
-    collidingObjects.Add(other.gameObject);
-    other.gameObject.GetComponent<TerrainObjectScript>().setRedColor();
+    var terrainObject = other.GetComponent<TerrainObjectScript>();
+    collidingObjects.Add(terrainObject);
+    terrainObject.setRedColor();
   }
 
   private void OnTriggerExit(Collider other) {
     if (!TemporaryObject || other.gameObject.GetComponent<TerrainObjectScript>() == null) {
       return;
     }
-    collidingObjects.Remove(other.gameObject);
-    other.gameObject.GetComponent<TerrainObjectScript>().setOriginalColors();
+    var terrainObject = other.GetComponent<TerrainObjectScript>();
+    collidingObjects.Remove(terrainObject);
+    terrainObject.setOriginalColors();
     if (collidingObjects.Count == 0) {
       setOriginalColors();
     }
   }
 
-  private void setRedColor() {
+  public void setRedColor() {
     if (originalColors != null) {
       return;
     }
@@ -84,7 +85,7 @@ public class TerrainObjectScript : MonoBehaviour {
     }
   }
 
-  private void setOriginalColors() {
+  public void setOriginalColors() {
     if (originalColors == null) {
       return;
     }
@@ -100,15 +101,19 @@ public class TerrainObjectScript : MonoBehaviour {
     return temporaryObject && holdableAngle() && collidingObjects.Count == 0;
   }
 
-  private bool holdableAngle() {
+  public bool holdableAngle() {
     return Vector3.Angle(transform.up, Vector3.up) < kMaxAngle;
   }
 
-  public void RemoveCollidingObjects() {
+  public void MarkCollidingObjectsForDestruction() {
     foreach (var obj in collidingObjects) {
-      Destroy(obj);
+      obj.markedForDestruction = true;
     }
     collidingObjects.Clear();
     setOriginalColors();
+  }
+
+  public bool isColliding() {
+    return collidingObjects.Count > 0;
   }
 }
