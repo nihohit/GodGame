@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.Base;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -30,8 +29,8 @@ public class BoardScript : MonoBehaviour {
   private NativeArray<bool> constantChangeIndicator;
   private NativeArray<float> cornerHeights;
   private NativeArray<float> centerHeights;
-  private List<ElevateVertices> elevateJobs = new List<ElevateVertices>();
-  private List<FlattenVertices> flattenJobs = new List<FlattenVertices>();
+  private List<TileMovingIdentifier> jobIndetifiers = new List<TileMovingIdentifier>();
+  private List<ITileMoving> jobs = new List<ITileMoving>();
   private JobHandle[] tileRaisingJobs;
   private JobHandle[] childMovingJobs;
   private List<TerrainObjectScript> connectedObjects = new List<TerrainObjectScript>();
@@ -347,231 +346,101 @@ public class BoardScript : MonoBehaviour {
       return;
     }
 
-    if (InteractionMode.FlattenTile == interactionMode) {
-      var computedValue = slider.value;
-      var lookingRange = slider.value + 1;
-      var deltaTime = Time.deltaTime;
+    var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
+    var computedValue = slider.value;
+    var lookingRange = slider.value + 1;
+    var deltaTime = Time.deltaTime;
 
-      flattenJobs.Clear();
-      int length = 0;
-      var adjustedX = hitPoint.x / Constants.SizeOfTile;
-      var adjustedZ = hitPoint.z / Constants.SizeOfTile;
+    jobIndetifiers.Clear();
+    jobs.Clear();
+    int length = 0;
+    var adjustedX = hitPoint.x / Constants.SizeOfTile;
+    var adjustedZ = hitPoint.z / Constants.SizeOfTile;
 
-      var minX = Mathf.FloorToInt(Mathf.Max(adjustedX - lookingRange, -x));
-      var maxX = Mathf.Min(adjustedX + lookingRange, x);
-      var minZ = Mathf.FloorToInt(Mathf.Max(adjustedZ - lookingRange, -z));
-      var maxZ = Mathf.Min(adjustedZ + lookingRange, z);
-      for (int i = minX; i < maxX; i++) {
-        for (int j = minZ; j < maxZ; j++) {
-          var xIndex = i + x;
-          var zIndex = j + z;
-          var tile = tileScripts[xIndex, zIndex];
+    var minX = Mathf.FloorToInt(Mathf.Max(adjustedX - lookingRange, -x));
+    var maxX = Mathf.Min(adjustedX + lookingRange, x);
+    var minZ = Mathf.FloorToInt(Mathf.Max(adjustedZ - lookingRange, -z));
+    var maxZ = Mathf.Min(adjustedZ + lookingRange, z);
 
+    for (int i = minX; i < maxX; i++) {
+      for (int j = minZ; j < maxZ; j++) {
+        var xIndex = i + x;
+        var zIndex = j + z;
+        var tile = tileScripts[xIndex, zIndex];
+
+        ITileMoving tileMoving;
+        JobHandle handle;
+        if (InteractionMode.FlattenTile == interactionMode) {
           var job = new FlattenVertices {
-            hitPoint = hitPointasFloat - tile.Position,
-            computedValue = computedValue,
-            deltaTime = deltaTime,
-            xCoord = xIndex,
-            yCoord = zIndex,
-            vertices = tile.nativeVertices,
-            heightChangeRate = currentHeightChangeRate,
-            wasChanged = changeIndicators[length]
+          centerOfAction = hitPointasFloat - tile.Position,
+          maximumChangeDistance = computedValue,
+          deltaTime = deltaTime,
+          vertices = tile.nativeVertices,
+          wasChanged = changeIndicators[length]
           };
-          var handle = job.Schedule();
-          tileRaisingJobs[length] = handle;
-          flattenJobs.Add(job);
-          childMovingJobs[length] = TileScript.adjustChildrenLocation(tile, handle, changeIndicators[length]);
-          length++;
-        }
-      }
-
-      var newVertices = new List<Vector3>(Constants.NumberOfVerticesInTile);
-      var populated = false;
-      var nativeHandles = new NativeArray<JobHandle>(length, Allocator.Temp);
-      for (int i = 0; i < length; i++) {
-        nativeHandles[i] = tileRaisingJobs[i];
-      }
-      JobHandle.CompleteAll(nativeHandles);
-      for (int i = 0; i < length; i++) {
-        if (!changeIndicators[i][0]) {
-          continue;
-        }
-        var job = flattenJobs[i];
-        var tile = tileScripts[job.xCoord, job.yCoord];
-        if (populated) {
-          for (int j = 0; j < job.vertices.Length; j++) {
-            //TODO - understand why this doesn't work, and then set populated.
-            job.vertices[i].CopyToVector(newVertices[i]);
-          }
-        } else {
-          job.vertices.ConvertInto(newVertices);
-          //populated = true;
-        }
-
-        tile.vertices = newVertices;
-      }
-
-      for (int i = 0; i < length; i++) {
-        nativeHandles[i] = childMovingJobs[i];
-      }
-      JobHandle.CompleteAll(nativeHandles);
-      nativeHandles.Dispose();
-    } else if (InteractionMode.LowerRaiseTile == interactionMode) {
-      var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
-      var computedValue = slider.value;
-      var lookingRange = slider.value + 1;
-      var deltaTime = Time.deltaTime;
-
-      elevateJobs.Clear();
-      int length = 0;
-      var adjustedX = hitPoint.x / Constants.SizeOfTile;
-      var adjustedZ = hitPoint.z / Constants.SizeOfTile;
-
-      var minX = Mathf.FloorToInt(Mathf.Max(adjustedX - lookingRange, -x));
-      var maxX = Mathf.Min(adjustedX + lookingRange, x);
-      var minZ = Mathf.FloorToInt(Mathf.Max(adjustedZ - lookingRange, -z));
-      var maxZ = Mathf.Min(adjustedZ + lookingRange, z);
-      for (int i = minX; i < maxX; i++) {
-        for (int j = minZ; j < maxZ; j++) {
-          var xIndex = i + x;
-          var zIndex = j + z;
-          var tile = tileScripts[xIndex, zIndex];
-
+          tileMoving = job;
+          handle = job.Schedule();
+        } else if (InteractionMode.LowerRaiseTile == interactionMode) {
           var job = new ElevateVertices {
-            hitPoint = hitPointasFloat - tile.Position,
-            computedValue = computedValue,
-            deltaTime = deltaTime,
-            actionDirection = actionDirection,
-            xCoord = xIndex,
-            yCoord = zIndex,
-            vertices = tile.nativeVertices,
-            heightChangeRate = currentHeightChangeRate,
-            wasChanged = changeIndicators[length]
+          centerOfAction = hitPointasFloat - tile.Position,
+          maximumChangeDistance = computedValue,
+          deltaTime = deltaTime,
+          actionDirection = actionDirection,
+          vertices = tile.nativeVertices,
+          heightChangeRate = currentHeightChangeRate,
+          wasChanged = changeIndicators[length]
           };
-          var handle = job.Schedule();
-          tileRaisingJobs[length] = handle;
-          elevateJobs.Add(job);
-          childMovingJobs[length] = TileScript.adjustChildrenLocation(tile, handle, changeIndicators[length]);
-          length++;
-        }
-      }
-
-      var newVertices = new List<Vector3>(Constants.NumberOfVerticesInTile);
-      var populated = false;
-      var nativeHandles = new NativeArray<JobHandle>(length, Allocator.Temp);
-      for (int i = 0; i < length; i++) {
-        nativeHandles[i] = tileRaisingJobs[i];
-      }
-      JobHandle.CompleteAll(nativeHandles);
-      for (int i = 0; i < length; i++) {
-        if (!changeIndicators[i][0]) {
-          continue;
-        }
-        var job = elevateJobs[i];
-        var tile = tileScripts[job.xCoord, job.yCoord];
-        if (populated) {
-          for (int j = 0; j < job.vertices.Length; j++) {
-            //TODO - understand why this doesn't work, and then set populated.
-            job.vertices[i].CopyToVector(newVertices[i]);
-          }
+          tileMoving = job;
+          handle = job.Schedule();
         } else {
-          job.vertices.ConvertInto(newVertices);
-          //populated = true;
+          throw new Exception("Unknown operation");
         }
 
-        tile.vertices = newVertices;
-      }
+        tileRaisingJobs[length] = handle;
+        jobs.Add(tileMoving);
 
-      for (int i = 0; i < length; i++) {
-        nativeHandles[i] = childMovingJobs[i];
+        jobIndetifiers.Add(new TileMovingIdentifier {
+          xCoord = xIndex,
+            yCoord = zIndex
+        });
+
+        childMovingJobs[length] = TileScript.adjustChildrenLocation(tile, handle, changeIndicators[length]);
+        length++;
       }
-      JobHandle.CompleteAll(nativeHandles);
-      nativeHandles.Dispose();
     }
-  }
 
-  [BurstCompile]
-  private struct ElevateVertices : IJob {
-    public NativeArray<float3> vertices;
-
-    [ReadOnly]
-    public float3 hitPoint;
-
-    [ReadOnly]
-    public float computedValue;
-
-    [ReadOnly]
-    public float deltaTime;
-
-    [ReadOnly]
-    public float3 actionDirection;
-
-    [ReadOnly]
-    public int xCoord;
-
-    [ReadOnly]
-    public int yCoord;
-
-    [ReadOnly]
-    public float heightChangeRate;
-
-    [WriteOnly]
-    public NativeSlice<bool> wasChanged;
-
-    public void Execute() {
-      wasChanged[0] = false;
-      for (var i = 0; i < vertices.Length; i++) {
-        var vertex = vertices[i];
-        var distance = math.distance(vertex, hitPoint) / Constants.SizeOfTile;
-        if (distance > computedValue) {
-          continue;
+    var newVertices = new List<Vector3>(Constants.NumberOfVerticesInTile);
+    var populated = false;
+    var nativeHandles = new NativeArray<JobHandle>(length, Allocator.Temp);
+    for (int i = 0; i < length; i++) {
+      nativeHandles[i] = tileRaisingJobs[i];
+    }
+    JobHandle.CompleteAll(nativeHandles);
+    for (int i = 0; i < length; i++) {
+      if (!changeIndicators[i][0]) {
+        continue;
+      }
+      var jobIdentifier = jobIndetifiers[i];
+      var job = jobs[i];
+      var tile = tileScripts[jobIdentifier.xCoord, jobIdentifier.yCoord];
+      if (populated) {
+        for (int j = 0; j < job.Vertices.Length; j++) {
+          //TODO - understand why this doesn't work, and then set populated.
+          job.Vertices[i].CopyToVector(newVertices[i]);
         }
-        wasChanged[0] = true;
-        var intensity = math.cos(distance / computedValue) * heightChangeRate;
-        vertices[i] = vertex + (actionDirection * intensity * deltaTime);
+      } else {
+        job.Vertices.ConvertInto(newVertices);
+        //populated = true;
       }
+
+      tile.vertices = newVertices;
     }
-  }
 
-  [BurstCompile]
-  private struct FlattenVertices : IJob {
-    public NativeArray<float3> vertices;
-
-    [ReadOnly]
-    public float3 hitPoint;
-
-    [ReadOnly]
-    public float computedValue;
-
-    [ReadOnly]
-    public float deltaTime;
-
-    [ReadOnly]
-    public int xCoord;
-
-    [ReadOnly]
-    public int yCoord;
-
-    [ReadOnly]
-    public float heightChangeRate;
-
-    [WriteOnly]
-    public NativeSlice<bool> wasChanged;
-
-    public void Execute() {
-      wasChanged[0] = false;
-      for (var i = 0; i < vertices.Length; i++) {
-        var vertex = vertices[i];
-        var distance = math.distance(vertex, hitPoint) / Constants.SizeOfTile;
-        if (distance > computedValue) {
-          continue;
-        }
-        wasChanged[0] = true;
-        var intensity = math.cos(distance / computedValue) * deltaTime;
-        vertex.y = Mathf.Lerp(vertex.y, hitPoint.y, intensity);
-        vertices[i] = vertex;
-      }
+    for (int i = 0; i < length; i++) {
+      nativeHandles[i] = childMovingJobs[i];
     }
+    JobHandle.CompleteAll(nativeHandles);
+    nativeHandles.Dispose();
   }
 
   private System.Nullable<RaycastHit> currentMousePointedLocation() {
