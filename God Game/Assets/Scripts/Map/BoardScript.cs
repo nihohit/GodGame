@@ -18,8 +18,8 @@ public class BoardScript : MonoBehaviour {
   public GameObject projector;
   public GameObject freedObjectsParent;
 
-  private TileScript[,] tileScripts;
-  private GameObject[,] tiles;
+  private TileScript[, ] tileScripts;
+  private GameObject[, ] tiles;
   private InteractionMode interactionMode;
   private TerrainObjectScript currentTree;
   private Vector3 currentTreeEulerRotation;
@@ -30,7 +30,8 @@ public class BoardScript : MonoBehaviour {
   private NativeArray<bool> constantChangeIndicator;
   private NativeArray<float> cornerHeights;
   private NativeArray<float> centerHeights;
-  private List<ComputeVertices> jobs = new List<ComputeVertices>();
+  private List<ElevateVertices> elevateJobs = new List<ElevateVertices>();
+  private List<FlattenVertices> flattenJobs = new List<FlattenVertices>();
   private JobHandle[] tileRaisingJobs;
   private JobHandle[] childMovingJobs;
   private List<TerrainObjectScript> connectedObjects = new List<TerrainObjectScript>();
@@ -50,7 +51,7 @@ public class BoardScript : MonoBehaviour {
   // Use this for initialization
   void Start() {
     adjustVerticesHandles = new NativeArray<JobHandle>(9, Allocator.Persistent);
-    var numberOfPotentialJobs = (int)math.pow(((slider.maxValue + 1) * 2) + 1, 2);
+    var numberOfPotentialJobs = (int) math.pow(((slider.maxValue + 1) * 2) + 1, 2);
     tileRaisingJobs = new JobHandle[numberOfPotentialJobs];
     childMovingJobs = new JobHandle[numberOfPotentialJobs];
     changeIndicators = Enumerable.Range(0, numberOfPotentialJobs)
@@ -64,7 +65,7 @@ public class BoardScript : MonoBehaviour {
   }
 
   private void initializeTiles() {
-    GameObject prefab = (GameObject)Resources.Load("Prefabs/Tile");
+    GameObject prefab = (GameObject) Resources.Load("Prefabs/Tile");
     treePrefabs = Resources.LoadAll<GameObject>("Prefabs/Trees/RegularTrees");
 
     var scale = new Vector3(Constants.SizeOfTile, 0, Constants.SizeOfTile);
@@ -81,7 +82,7 @@ public class BoardScript : MonoBehaviour {
 
         var tree = instantiateObject(Randomizer.ChooseValue(treePrefabs), Vector3.zero);
         connectObject(tree.GetComponent<TerrainObjectScript>(), tile);
-        tree.transform.localPosition = new Vector3((float)Randomizer.NextDouble(-halfSize, halfSize), 0, (float)Randomizer.NextDouble(-halfSize, halfSize));
+        tree.transform.localPosition = new Vector3((float) Randomizer.NextDouble(-halfSize, halfSize), 0, (float) Randomizer.NextDouble(-halfSize, halfSize));
         randomRotationAndScale(tree.transform);
       }
     }
@@ -131,7 +132,7 @@ public class BoardScript : MonoBehaviour {
   }
 
   private GameObject instantiateObject(UnityEngine.Object prefab, Vector3 position) {
-    return (GameObject)Instantiate(prefab, position, Quaternion.identity);
+    return (GameObject) Instantiate(prefab, position, Quaternion.identity);
   }
 
   // Update is called once per frame
@@ -317,7 +318,7 @@ public class BoardScript : MonoBehaviour {
   private void randomRotationAndScale(Transform obj) {
     var rotation = Randomizer.Next(360);
     obj.localRotation = Quaternion.Euler(0f, rotation, 0f);
-    var scale = (float)Randomizer.NextDouble(-0.2, 0.2);
+    var scale = (float) Randomizer.NextDouble(-0.2, 0.2);
     obj.localScale += new Vector3(scale, scale, scale);
     obj.localScale = obj.localScale * 0.2f;
   }
@@ -347,15 +348,11 @@ public class BoardScript : MonoBehaviour {
     }
 
     if (InteractionMode.FlattenTile == interactionMode) {
-      TileScript tileToUpdate = hit.Value.collider.GetComponent<TileScript>();
-      updateTile(tileToUpdate, direction);
-    } else if (InteractionMode.LowerRaiseTile == interactionMode) {
-      var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
       var computedValue = slider.value;
       var lookingRange = slider.value + 1;
       var deltaTime = Time.deltaTime;
 
-      jobs.Clear();
+      flattenJobs.Clear();
       int length = 0;
       var adjustedX = hitPoint.x / Constants.SizeOfTile;
       var adjustedZ = hitPoint.z / Constants.SizeOfTile;
@@ -370,11 +367,10 @@ public class BoardScript : MonoBehaviour {
           var zIndex = j + z;
           var tile = tileScripts[xIndex, zIndex];
 
-          var job = new ComputeVertices {
-            HitPoint = hitPointasFloat - tile.Position,
+          var job = new FlattenVertices {
+            hitPoint = hitPointasFloat - tile.Position,
             computedValue = computedValue,
             deltaTime = deltaTime,
-            actionDirection = actionDirection,
             xCoord = xIndex,
             yCoord = zIndex,
             vertices = tile.nativeVertices,
@@ -383,7 +379,7 @@ public class BoardScript : MonoBehaviour {
           };
           var handle = job.Schedule();
           tileRaisingJobs[length] = handle;
-          jobs.Add(job);
+          flattenJobs.Add(job);
           childMovingJobs[length] = TileScript.adjustChildrenLocation(tile, handle, changeIndicators[length]);
           length++;
         }
@@ -400,7 +396,78 @@ public class BoardScript : MonoBehaviour {
         if (!changeIndicators[i][0]) {
           continue;
         }
-        var job = jobs[i];
+        var job = flattenJobs[i];
+        var tile = tileScripts[job.xCoord, job.yCoord];
+        if (populated) {
+          for (int j = 0; j < job.vertices.Length; j++) {
+            //TODO - understand why this doesn't work, and then set populated.
+            job.vertices[i].CopyToVector(newVertices[i]);
+          }
+        } else {
+          job.vertices.ConvertInto(newVertices);
+          //populated = true;
+        }
+
+        tile.vertices = newVertices;
+      }
+
+      for (int i = 0; i < length; i++) {
+        nativeHandles[i] = childMovingJobs[i];
+      }
+      JobHandle.CompleteAll(nativeHandles);
+      nativeHandles.Dispose();
+    } else if (InteractionMode.LowerRaiseTile == interactionMode) {
+      var actionDirection = direction == TileUpdateDirection.Up ? Vector3.up : Vector3.down;
+      var computedValue = slider.value;
+      var lookingRange = slider.value + 1;
+      var deltaTime = Time.deltaTime;
+
+      elevateJobs.Clear();
+      int length = 0;
+      var adjustedX = hitPoint.x / Constants.SizeOfTile;
+      var adjustedZ = hitPoint.z / Constants.SizeOfTile;
+
+      var minX = Mathf.FloorToInt(Mathf.Max(adjustedX - lookingRange, -x));
+      var maxX = Mathf.Min(adjustedX + lookingRange, x);
+      var minZ = Mathf.FloorToInt(Mathf.Max(adjustedZ - lookingRange, -z));
+      var maxZ = Mathf.Min(adjustedZ + lookingRange, z);
+      for (int i = minX; i < maxX; i++) {
+        for (int j = minZ; j < maxZ; j++) {
+          var xIndex = i + x;
+          var zIndex = j + z;
+          var tile = tileScripts[xIndex, zIndex];
+
+          var job = new ElevateVertices {
+            hitPoint = hitPointasFloat - tile.Position,
+            computedValue = computedValue,
+            deltaTime = deltaTime,
+            actionDirection = actionDirection,
+            xCoord = xIndex,
+            yCoord = zIndex,
+            vertices = tile.nativeVertices,
+            heightChangeRate = currentHeightChangeRate,
+            wasChanged = changeIndicators[length]
+          };
+          var handle = job.Schedule();
+          tileRaisingJobs[length] = handle;
+          elevateJobs.Add(job);
+          childMovingJobs[length] = TileScript.adjustChildrenLocation(tile, handle, changeIndicators[length]);
+          length++;
+        }
+      }
+
+      var newVertices = new List<Vector3>(Constants.NumberOfVerticesInTile);
+      var populated = false;
+      var nativeHandles = new NativeArray<JobHandle>(length, Allocator.Temp);
+      for (int i = 0; i < length; i++) {
+        nativeHandles[i] = tileRaisingJobs[i];
+      }
+      JobHandle.CompleteAll(nativeHandles);
+      for (int i = 0; i < length; i++) {
+        if (!changeIndicators[i][0]) {
+          continue;
+        }
+        var job = elevateJobs[i];
         var tile = tileScripts[job.xCoord, job.yCoord];
         if (populated) {
           for (int j = 0; j < job.vertices.Length; j++) {
@@ -424,11 +491,11 @@ public class BoardScript : MonoBehaviour {
   }
 
   [BurstCompile]
-  private struct ComputeVertices : IJob {
+  private struct ElevateVertices : IJob {
     public NativeArray<float3> vertices;
 
     [ReadOnly]
-    public float3 HitPoint;
+    public float3 hitPoint;
 
     [ReadOnly]
     public float computedValue;
@@ -455,13 +522,54 @@ public class BoardScript : MonoBehaviour {
       wasChanged[0] = false;
       for (var i = 0; i < vertices.Length; i++) {
         var vertex = vertices[i];
-        var distance = math.distance(vertex, HitPoint) / Constants.SizeOfTile;
+        var distance = math.distance(vertex, hitPoint) / Constants.SizeOfTile;
         if (distance > computedValue) {
           continue;
         }
         wasChanged[0] = true;
         var intensity = math.cos(distance / computedValue) * heightChangeRate;
         vertices[i] = vertex + (actionDirection * intensity * deltaTime);
+      }
+    }
+  }
+
+  [BurstCompile]
+  private struct FlattenVertices : IJob {
+    public NativeArray<float3> vertices;
+
+    [ReadOnly]
+    public float3 hitPoint;
+
+    [ReadOnly]
+    public float computedValue;
+
+    [ReadOnly]
+    public float deltaTime;
+
+    [ReadOnly]
+    public int xCoord;
+
+    [ReadOnly]
+    public int yCoord;
+
+    [ReadOnly]
+    public float heightChangeRate;
+
+    [WriteOnly]
+    public NativeSlice<bool> wasChanged;
+
+    public void Execute() {
+      wasChanged[0] = false;
+      for (var i = 0; i < vertices.Length; i++) {
+        var vertex = vertices[i];
+        var distance = math.distance(vertex, hitPoint) / Constants.SizeOfTile;
+        if (distance > computedValue) {
+          continue;
+        }
+        wasChanged[0] = true;
+        var intensity = math.cos(distance / computedValue) * deltaTime;
+        vertex.y = Mathf.Lerp(vertex.y, hitPoint.y, intensity);
+        vertices[i] = vertex;
       }
     }
   }
