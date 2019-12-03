@@ -14,7 +14,6 @@ public class BoardScript : MonoBehaviour {
   public int x, z;
   public bool flatten, changeHeight;
   public Slider slider;
-  public GameObject projector;
   public GameObject freedObjectsParent;
 
   private TileScript[, ] tileScripts;
@@ -238,7 +237,6 @@ public class BoardScript : MonoBehaviour {
   }
   #region tree interaction
   private void handleTreeInteraction() {
-    projector.SetActive(false);
     var hit = currentMousePointedLocation();
     if (!hit.HasValue) {
       return;
@@ -333,8 +331,6 @@ public class BoardScript : MonoBehaviour {
 
     var hitPoint = hit.Value.point;
     float3 hitPointasFloat = hitPoint;
-    projector.transform.position = hitPoint + (Vector3.up * slider.value);
-    projector.SetActive(true);
     var currentHeightChangeRate = heightChangeRate * Constants.SizeOfTile;
 
     TileUpdateDirection direction;
