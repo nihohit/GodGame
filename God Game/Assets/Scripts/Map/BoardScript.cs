@@ -406,7 +406,6 @@ public class BoardScript : MonoBehaviour {
     }
 
     var newVertices = new List<Vector3>(Constants.NumberOfVerticesInTile);
-    var populated = false;
     var nativeHandles = new NativeArray<JobHandle>(length, Allocator.Temp);
     for (int i = 0; i < length; i++) {
       nativeHandles[i] = tileRaisingJobs[i];
@@ -419,16 +418,7 @@ public class BoardScript : MonoBehaviour {
       var jobIdentifier = jobIndetifiers[i];
       var job = jobs[i];
       var tile = tileScripts[jobIdentifier.xCoord, jobIdentifier.yCoord];
-      if (populated) {
-        for (int j = 0; j < job.Vertices.Length; j++) {
-          //TODO - understand why this doesn't work, and then set populated.
-          job.Vertices[i].CopyToVector(newVertices[i]);
-        }
-      } else {
-        job.Vertices.ConvertInto(newVertices);
-        //populated = true;
-      }
-
+      job.Vertices.ConvertInto(newVertices);
       tile.vertices = newVertices;
     }
 
